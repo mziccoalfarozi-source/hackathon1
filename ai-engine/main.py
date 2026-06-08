@@ -173,6 +173,17 @@ class PredictionResponse(BaseModel):
         ),
     )
 
+    # Web3 / Solidity-compatible representation
+    confidence_onchain: int = Field(
+        ...,
+        description=(
+            "Confidence expressed in basis points (integer). "
+            "Formula: int(confidence * 10000). Range: 0–10000. "
+            "Solidity-safe alternative to the float `confidence` field; "
+            "use this value when storing predictions in a smart contract."
+        ),
+    )
+
 
 # ---------------------------------------------------------------------------
 # Model Loading
@@ -322,6 +333,10 @@ def predict(payload: PatientData) -> PredictionResponse:
     status_color    = URGENCY_COLOR_MAP[priority_score]
     requires_immediate_action = priority_score == 2
 
+    # Web3-proof: convert float confidence to basis points (Solidity cannot handle floats)
+    # e.g. 0.8731 → 8731  |  1.0 → 10000  |  0.0 → 0
+    confidence_int  = int(confidence * 10000)
+
     return PredictionResponse(
         priority_score=priority_score,
         urgency_label=urgency_label,
@@ -329,6 +344,7 @@ def predict(payload: PatientData) -> PredictionResponse:
         status_color=status_color,
         requires_immediate_action=requires_immediate_action,
         safety_override_applied=safety_override_applied,
+        confidence_onchain=confidence_int,
     )
 
 
