@@ -1,0 +1,24 @@
+{
+  // Python interpreter — points to Python 3.14 where all project deps are installed
+  // (joblib, xgboost, scikit-learn, and after install: fastapi, pydantic, uvicorn)
+  "python.defaultInterpreterPath": "C:\\Users\\LENOVO\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe",
+
+  // Pylance type-checking — use "basic" to surface real errors without being overly strict
+  "python.analysis.typeCheckingMode": "basic",
+
+  // Tell Pylance explicitly which Python version to use for analysis
+  "python.analysis.pythonVersion": "3.14",
+
+  // Jupyter kernel — use the same Python 3.14 interpreter so %pip targets the right env
+  "jupyter.defaultKernel": "python3",
+  "jupyter.kernels.filter": [],
+
+  // Suppress Pylance false-positive import warnings for packages installed at runtime
+  "python.analysis.ignore": [],
+
+  // File associations
+  "[python]": {
+    "editor.formatOnSave": false,
+    "editor.rulers": [88]
+  }
+}
