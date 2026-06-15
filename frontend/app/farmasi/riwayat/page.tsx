@@ -2,8 +2,9 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, History, Pill } from 'lucide-react'
+import { CircleCheckBig, History, Pill } from 'lucide-react'
 import { useQueue } from '@/contexts/QueueContext'
+import { StaggerContainer, StaggerItem, SlideUp } from '@/components/motion'
 
 export default function FarmasiRiwayat() {
   const { patients } = useQueue()
@@ -23,13 +24,14 @@ export default function FarmasiRiwayat() {
         <p className="text-sm text-slate-500 mt-1">{completedPatients.length} resep telah diserahkan</p>
       </div>
 
-      <div className="space-y-3">
-        {completedPatients.map(patient => (
-          <Card key={patient.id} className="border-slate-200 shadow-sm">
+      <StaggerContainer className="space-y-3">
+        {completedPatients.map((patient, i) => (
+          <StaggerItem key={patient.id}>
+            <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
             <CardContent className="p-4">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                  <CircleCheckBig className="w-5 h-5 text-green-600 dark:text-green-500" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -42,7 +44,7 @@ export default function FarmasiRiwayat() {
                   {patient.prescriptions && (
                     <div className="flex flex-wrap gap-1">
                       {patient.prescriptions.map((rx, i) => (
-                        <Badge key={i} variant="outline" className="text-xs bg-violet-50 text-violet-700 border-violet-200">
+                        <Badge key={i} variant="outline" className="text-xs bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-900/50">
                           <Pill className="w-3 h-3 mr-1" />
                           {rx.medicationName} {rx.dosage} · {rx.frequency}
                         </Badge>
@@ -50,18 +52,19 @@ export default function FarmasiRiwayat() {
                     </div>
                   )}
                 </div>
-                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">Selesai</Badge>
+                <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/50">Selesai</Badge>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          </StaggerItem>
         ))}
         {completedPatients.length === 0 && (
-          <div className="text-center py-20">
+          <SlideUp delay={0.2} className="text-center py-20">
             <History className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-500 font-medium">Belum ada riwayat</p>
-          </div>
+          </SlideUp>
         )}
-      </div>
+      </StaggerContainer>
     </div>
   )
 }

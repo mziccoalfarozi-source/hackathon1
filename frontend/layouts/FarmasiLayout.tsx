@@ -1,9 +1,9 @@
 import DashboardLayout from './DashboardLayout'
-import { LayoutDashboard, History } from 'lucide-react'
+import { LayoutGrid, ClockArrowUp } from 'lucide-react'
 
 const farmasiNavItems = [
-  { path: '/farmasi', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/farmasi/riwayat', label: 'Riwayat', icon: History },
+  { path: '/farmasi', label: 'Dashboard', icon: LayoutGrid },
+  { path: '/farmasi/riwayat', label: 'Riwayat', icon: ClockArrowUp },
 ]
 
 export default function FarmasiLayout({ children }: { children: React.ReactNode }) {

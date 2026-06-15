@@ -2,9 +2,9 @@
 
 import { useAuth, getRoleDashboardPath } from '@/contexts/AuthContext'
 import type { UserRole } from '@/types'
-import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import { FullPageLoader } from '@/components/skeletons'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -26,25 +26,11 @@ export default function ProtectedRoute({ children, allowedRole }: ProtectedRoute
   }, [user, isLoading, allowedRole, router])
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm">Memuat...</p>
-        </div>
-      </div>
-    )
+    return <FullPageLoader />
   }
 
   if (!user || user.role !== allowedRole) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm">Memuat...</p>
-        </div>
-      </div>
-    )
+    return <FullPageLoader />
   }
 
   return <>{children}</>

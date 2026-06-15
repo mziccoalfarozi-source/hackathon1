@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
-  ArrowRight, CheckCircle
+  ArrowRight, CircleCheckBig
 } from 'lucide-react'
 import { useQueue } from '@/contexts/QueueContext'
 
@@ -29,9 +29,9 @@ export default function DokterAntrian() {
         {waitingPatients.map(patient => (
           <Link key={patient.id} href={`/dokter/periksa/${patient.id}`}>
             <Card className={`border shadow-sm hover:shadow-md transition-all cursor-pointer ${
-              patient.triageResult.priority === 'CRITICAL' ? 'border-red-200 bg-red-50/30' :
-              patient.triageResult.priority === 'HIGH' ? 'border-orange-200 bg-orange-50/30' :
-              'border-slate-200 bg-white'
+              patient.triageResult.priority === 'CRITICAL' ? 'border-red-200 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/20' :
+              patient.triageResult.priority === 'HIGH' ? 'border-orange-200 dark:border-orange-900/50 bg-orange-50/30 dark:bg-orange-950/20' :
+              'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50'
             }`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
@@ -67,7 +67,7 @@ export default function DokterAntrian() {
         ))}
         {waitingPatients.length === 0 && (
           <div className="text-center py-20">
-            <CheckCircle className="w-12 h-12 text-green-300 mx-auto mb-3" />
+            <CircleCheckBig className="w-12 h-12 text-green-300 mx-auto mb-3" />
             <p className="text-slate-500 font-medium">Semua pasien sudah ditangani</p>
             <p className="text-sm text-slate-400 mt-1">Tidak ada pasien dalam antrian</p>
           </div>

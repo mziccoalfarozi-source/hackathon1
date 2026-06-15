@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { Toaster, toast } from 'sonner'
 import {
-  User, Heart, Thermometer, Wind, Activity, Clock, Brain,
+  User, Heart, Thermometer, Wind, HeartPulse, Clock, Brain,
   Stethoscope, ArrowLeft, Plus, Trash2, Send, FlaskConical,
   AlertTriangle
 } from 'lucide-react'
@@ -162,20 +162,20 @@ export default function PeriksaPasien() {
               <Separator />
               <div>
                 <span className="text-slate-500 block mb-1">Keluhan</span>
-                <p className="text-xs bg-slate-50 p-2 rounded-lg leading-relaxed">{patient.complaint}</p>
+                <p className="text-xs bg-slate-50 dark:bg-slate-800/80 p-2 rounded-lg leading-relaxed">{patient.complaint}</p>
               </div>
               <div>
                 <span className="text-slate-500 block mb-1">Gejala</span>
                 <div className="flex flex-wrap gap-1">
                   {patient.symptoms.map(s => (
-                    <Badge key={s} variant="outline" className="text-xs bg-white">{getSymptomLabel(s)}</Badge>
+                    <Badge key={s} variant="outline" className="text-xs bg-white dark:bg-slate-800">{getSymptomLabel(s)}</Badge>
                   ))}
                 </div>
               </div>
               {patient.allergies && (
                 <div>
                   <span className="text-slate-500 block mb-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-amber-500" />Alergi</span>
-                  <p className="text-xs bg-amber-50 p-2 rounded-lg text-amber-800">{patient.allergies}</p>
+                  <p className="text-xs bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg text-amber-800 dark:text-amber-500">{patient.allergies}</p>
                 </div>
               )}
             </CardContent>
@@ -185,16 +185,16 @@ export default function PeriksaPasien() {
           <Card className="shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Activity className="w-4 h-4 text-rose-500" />Tanda Vital
+                <HeartPulse className="w-4 h-4 text-rose-500" />Tanda Vital
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {[
-                { label: 'Tekanan Darah', value: patient.vitalSigns.bloodPressure, unit: 'mmHg', icon: Heart, color: 'text-rose-500', bg: 'bg-rose-50' },
-                { label: 'Denyut Jantung', value: patient.vitalSigns.heartRate, unit: 'bpm', icon: Activity, color: 'text-red-500', bg: 'bg-red-50' },
-                { label: 'Suhu', value: patient.vitalSigns.temperature, unit: '°C', icon: Thermometer, color: 'text-orange-500', bg: 'bg-orange-50' },
-                { label: 'SpO2', value: patient.vitalSigns.oxygenSaturation, unit: '%', icon: Wind, color: 'text-blue-500', bg: 'bg-blue-50' },
-                { label: 'Frek. Napas', value: patient.vitalSigns.respiratoryRate, unit: '/menit', icon: Clock, color: 'text-cyan-500', bg: 'bg-cyan-50' },
+                { label: 'Tekanan Darah', value: patient.vitalSigns.bloodPressure, unit: 'mmHg', icon: Heart, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-950/30' },
+                { label: 'Denyut Jantung', value: patient.vitalSigns.heartRate, unit: 'bpm', icon: HeartPulse, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-950/30' },
+                { label: 'Suhu', value: patient.vitalSigns.temperature, unit: '°C', icon: Thermometer, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-950/30' },
+                { label: 'SpO2', value: patient.vitalSigns.oxygenSaturation, unit: '%', icon: Wind, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/30' },
+                { label: 'Frek. Napas', value: patient.vitalSigns.respiratoryRate, unit: '/menit', icon: Clock, color: 'text-cyan-500', bg: 'bg-cyan-50 dark:bg-cyan-950/30' },
               ].map((v, i) => {
                 const Icon = v.icon
                 return (
@@ -223,15 +223,15 @@ export default function PeriksaPasien() {
             <CardContent>
               <ul className="space-y-2">
                 {patient.triageResult.reasoning.map((r, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                    <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i+1}</span>
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                    <span className="w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i+1}</span>
                     {r}
                   </li>
                 ))}
               </ul>
-              <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                <p className="text-xs font-semibold text-amber-800 mb-1">Rekomendasi AI:</p>
-                <p className="text-xs text-amber-700">{patient.triageResult.recommendedAction}</p>
+              <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/50">
+                <p className="text-xs font-semibold text-amber-800 dark:text-amber-500 mb-1">Rekomendasi AI:</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400">{patient.triageResult.recommendedAction}</p>
               </div>
             </CardContent>
           </Card>
@@ -272,7 +272,7 @@ export default function PeriksaPasien() {
 
                 <div className="space-y-4">
                   {prescriptions.map((rx, idx) => (
-                    <div key={rx.id} className="bg-slate-50 rounded-xl p-4 border border-slate-200 relative">
+                    <div key={rx.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700 relative">
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-xs font-bold text-slate-500">Obat #{idx + 1}</span>
                         {prescriptions.length > 1 && (

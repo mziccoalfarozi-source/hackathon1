@@ -1,10 +1,10 @@
 import DashboardLayout from './DashboardLayout'
-import { LayoutDashboard, ClipboardList, History } from 'lucide-react'
+import { LayoutGrid, Stethoscope, ClockArrowUp } from 'lucide-react'
 
 const dokterNavItems = [
-  { path: '/dokter', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/dokter/antrian', label: 'Antrian Pasien', icon: ClipboardList },
-  { path: '/dokter/riwayat', label: 'Riwayat Pasien', icon: History },
+  { path: '/dokter', label: 'Dashboard', icon: LayoutGrid },
+  { path: '/dokter/antrian', label: 'Antrian Pasien', icon: Stethoscope },
+  { path: '/dokter/riwayat', label: 'Riwayat Pasien', icon: ClockArrowUp },
 ]
 
 export default function DokterLayout({ children }: { children: React.ReactNode }) {

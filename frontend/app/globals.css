@@ -63,25 +63,28 @@
   }
 }
 
+/* ============================================================
+   LIGHT MODE TOKENS  (Medical Green / Clean White)
+   ============================================================ */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --background: 210 20% 97%;      /* Soft off-white – bukan putih murni */
+  --foreground: 222 47% 11%;
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 160 84% 39%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 160 84% 39%;         /* Medical Green */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 30% 95%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 25% 94%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 160 50% 94%;          /* Soft green tint for accents */
+  --accent-foreground: 160 84% 22%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 20% 88%;
+  --input: 214 20% 88%;
   --ring: 160 84% 39%;
   --radius: 0.75rem;
   --chart-1: 160 84% 39%;
@@ -89,74 +92,129 @@
   --chart-3: 197 37% 24%;
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
-  --sidebar-background: 0 0% 98%;
-  --sidebar-foreground: 240 5.3% 26.1%;
+  --sidebar-background: 210 20% 97%;
+  --sidebar-foreground: 240 5% 26%;
   --sidebar-primary: 160 84% 39%;
-  --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 240 4.8% 95.9%;
-  --sidebar-accent-foreground: 240 5.9% 10%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 210 25% 94%;
+  --sidebar-accent-foreground: 240 6% 10%;
   --sidebar-border: 220 13% 91%;
   --sidebar-ring: 160 84% 39%;
 }
 
+/* ============================================================
+   DARK MODE TOKENS  (Cyberpunk / Modern Tech)
+   ============================================================ */
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 160 84% 39%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 160 84% 39%;
-  --sidebar-background: 240 5.9% 10%;
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 160 84% 39%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-ring: 160 84% 39%;
+  --background: 222 47% 9%;       /* Deep slate – bukan hitam pekat */
+  --foreground: 213 31% 91%;
+  --card: 222 40% 13%;            /* Card sedikit lebih terang dari bg */
+  --card-foreground: 213 31% 91%;
+  --popover: 222 40% 11%;
+  --popover-foreground: 213 31% 91%;
+  --primary: 187 85% 53%;         /* Cyberpunk Cyan – info/normal/safe */
+  --primary-foreground: 222 47% 9%;
+  --secondary: 222 35% 16%;
+  --secondary-foreground: 213 31% 91%;
+  --muted: 222 35% 16%;
+  --muted-foreground: 218 18% 58%;
+  --accent: 222 35% 18%;
+  --accent-foreground: 213 31% 91%;
+  --destructive: 330 80% 60%;     /* Neon Pink – peringatan/darurat */
+  --destructive-foreground: 0 0% 100%;
+  --border: 222 30% 20%;
+  --input: 222 30% 18%;
+  --ring: 187 85% 53%;
+  --chart-1: 187 85% 53%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 330 80% 60%;
+  --chart-4: 43 90% 60%;
+  --chart-5: 280 60% 65%;
+  --sidebar-background: 222 47% 9%;
+  --sidebar-foreground: 213 31% 91%;
+  --sidebar-primary: 187 85% 53%;
+  --sidebar-primary-foreground: 222 47% 9%;
+  --sidebar-accent: 222 35% 16%;
+  --sidebar-accent-foreground: 213 31% 91%;
+  --sidebar-border: 222 30% 20%;
+  --sidebar-ring: 187 85% 53%;
 }
 
+/* ============================================================
+   BASE LAYER
+   ============================================================ */
 @layer base {
   * {
     @apply border-border;
+    /* Transisi warna global – membuat pergantian tema sangat smooth */
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 250ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  /* Animasi motion tidak boleh tertimpa transisi CSS */
+  [style*="transform"],
+  [style*="opacity"],
+  [style*="translate"],
+  [style*="scale"] {
+    transition-property: background-color, border-color, color;
   }
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
+
+  /* ---- TABLE DARK MODE: fix hardcoded colors di tabel ---- */
+  .dark table thead tr {
+    background-color: hsl(var(--card)) !important;
+    border-bottom-color: hsl(var(--border)) !important;
+  }
+  .dark table th {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+  .dark table tbody tr {
+    border-bottom-color: hsl(var(--border));
+  }
+  .dark table tbody tr:hover {
+    background-color: hsl(var(--muted) / 0.5) !important;
+  }
+  .dark table td {
+    color: hsl(var(--card-foreground));
+  }
+  /* Fix inline bg-slate / bg-white yang ada di dalam tabel */
+  .dark .bg-slate-50\/50 { background-color: hsl(var(--muted) / 0.3) !important; }
+  .dark .bg-white { background-color: hsl(var(--card)) !important; }
+  .dark .bg-slate-50 { background-color: hsl(var(--background)) !important; }
+  .dark .bg-slate-100 { background-color: hsl(var(--muted)) !important; }
+
+  /* ---- code / mono chips ---- */
+  .dark code.font-mono,
+  .dark .bg-slate-100.px-1\.5 {
+    background-color: hsl(var(--muted)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
 }
 
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
 html {
   scroll-behavior: smooth;
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: hsl(var(--border));
+  border-radius: 4px;
 }
-
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+}
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: hsl(var(--muted-foreground) / 0.5);
 }

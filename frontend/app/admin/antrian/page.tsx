@@ -6,8 +6,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  ClipboardList, CheckCircle, Clock3,
-  Activity, Filter, UserPlus
+  ClipboardList, CircleCheckBig, Clock3,
+  Stethoscope, Filter, UserPlus
 } from 'lucide-react'
 import { useQueue } from '@/contexts/QueueContext'
 
@@ -37,8 +37,8 @@ export default function AntrianAdmin() {
 
   const getStatusLabel = (s: string) => {
     if (s === 'WAITING') return { label: 'Menunggu', icon: Clock3, cls: 'bg-amber-50 text-amber-700 border-amber-200' }
-    if (s === 'IN_PROGRESS') return { label: 'Diperiksa', icon: Activity, cls: 'bg-blue-50 text-blue-700 border-blue-200' }
-    return { label: 'Selesai', icon: CheckCircle, cls: 'bg-green-50 text-green-700 border-green-200' }
+    if (s === 'IN_PROGRESS') return { label: 'Diperiksa', icon: Stethoscope, cls: 'bg-blue-50 text-blue-700 border-blue-200' }
+    return { label: 'Selesai', icon: CircleCheckBig, cls: 'bg-green-50 text-green-700 border-green-200' }
   }
 
   const getPriorityBadge = (p: string) => {
@@ -65,10 +65,10 @@ export default function AntrianAdmin() {
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3">
         {[
-          { label: 'Total', value: stats.total, cls: 'bg-slate-100 text-slate-700' },
-          { label: 'Menunggu', value: stats.waiting, cls: 'bg-amber-100 text-amber-700' },
-          { label: 'Diperiksa', value: stats.inProgress, cls: 'bg-blue-100 text-blue-700' },
-          { label: 'Selesai', value: stats.completed, cls: 'bg-green-100 text-green-700' },
+          { label: 'Total', value: stats.total, cls: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200' },
+          { label: 'Menunggu', value: stats.waiting, cls: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' },
+          { label: 'Diperiksa', value: stats.inProgress, cls: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' },
+          { label: 'Selesai', value: stats.completed, cls: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' },
         ].map(s => (
           <div key={s.label} className={`rounded-xl p-3 ${s.cls}`}>
             <p className="text-xs font-medium opacity-75">{s.label}</p>
@@ -86,7 +86,9 @@ export default function AntrianAdmin() {
           {(['ALL', 'WAITING', 'IN_PROGRESS', 'COMPLETED'] as StatusFilter[]).map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                statusFilter === s ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
+                statusFilter === s
+                  ? 'bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-900'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
               }`}>
               {s === 'ALL' ? 'Semua' : s === 'WAITING' ? 'Menunggu' : s === 'IN_PROGRESS' ? 'Diperiksa' : 'Selesai'}
             </button>
@@ -97,11 +99,11 @@ export default function AntrianAdmin() {
             <button key={p} onClick={() => setPriorityFilter(p)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 priorityFilter === p
-                  ? p === 'ALL' ? 'bg-slate-800 text-white' :
+                  ? p === 'ALL' ? 'bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-900' :
                     p === 'CRITICAL' ? 'bg-red-600 text-white' :
                     p === 'HIGH' ? 'bg-orange-500 text-white' :
                     p === 'MEDIUM' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
               }`}>
               {p === 'ALL' ? 'Semua' : p === 'CRITICAL' ? 'Kritis' : p === 'HIGH' ? 'Tinggi' : p === 'MEDIUM' ? 'Sedang' : 'Rendah'}
             </button>
@@ -116,9 +118,9 @@ export default function AntrianAdmin() {
           const StatusIcon = statusCfg.icon
           return (
             <Card key={patient.id} className={`border shadow-sm hover:shadow-md transition-shadow ${
-              patient.triageResult.priority === 'CRITICAL' ? 'border-red-200 bg-red-50/30' :
-              patient.triageResult.priority === 'HIGH' ? 'border-orange-200 bg-orange-50/30' :
-              'border-slate-200 bg-white'
+              patient.triageResult.priority === 'CRITICAL' ? 'border-red-200 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/20' :
+              patient.triageResult.priority === 'HIGH' ? 'border-orange-200 dark:border-orange-900/50 bg-orange-50/30 dark:bg-orange-950/20' :
+              'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50'
             }`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">

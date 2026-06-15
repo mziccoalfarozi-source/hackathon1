@@ -2,9 +2,10 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, History, FlaskConical } from 'lucide-react'
+import { CircleCheckBig, History, FlaskConical } from 'lucide-react'
 import { useQueue } from '@/contexts/QueueContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { StaggerContainer, StaggerItem, SlideUp } from '@/components/motion'
 
 export default function DokterRiwayat() {
   const { patients } = useQueue()
@@ -21,13 +22,14 @@ export default function DokterRiwayat() {
         <p className="text-sm text-slate-500 mt-1">{completedPatients.length} pasien telah diperiksa</p>
       </div>
 
-      <div className="space-y-3">
-        {completedPatients.map(patient => (
-          <Card key={patient.id} className="border-slate-200 shadow-sm">
+      <StaggerContainer className="space-y-3">
+        {completedPatients.map((patient, i) => (
+          <StaggerItem key={patient.id}>
+            <Card className="border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
             <CardContent className="p-4">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <CircleCheckBig className="w-5 h-5 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -62,15 +64,16 @@ export default function DokterRiwayat() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          </StaggerItem>
         ))}
         {completedPatients.length === 0 && (
-          <div className="text-center py-20">
+          <SlideUp delay={0.2} className="text-center py-20">
             <History className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-500 font-medium">Belum ada riwayat pasien</p>
-          </div>
+          </SlideUp>
         )}
-      </div>
+      </StaggerContainer>
     </div>
   )
 }

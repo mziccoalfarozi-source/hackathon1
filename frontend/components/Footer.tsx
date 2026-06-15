@@ -1,4 +1,4 @@
-import { Activity, Github, Globe, Heart } from 'lucide-react'
+import { HeartPulse, Globe, Heart } from 'lucide-react'
 
 export default function Footer() {
   return (
@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center">
-              <Activity className="w-4 h-4 text-white" />
+              <HeartPulse className="w-4 h-4 text-white" />
             </div>
             <div>
               <p className="text-sm font-semibold text-white">AI Triage Puskesmas</p>

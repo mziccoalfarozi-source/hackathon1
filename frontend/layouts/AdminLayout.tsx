@@ -1,11 +1,11 @@
 import DashboardLayout from './DashboardLayout'
-import { LayoutDashboard, UserPlus, ClipboardList, ShieldCheck } from 'lucide-react'
+import { LayoutGrid, UserRoundPlus, ListOrdered, FileSearch } from 'lucide-react'
 
 const adminNavItems = [
-  { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/admin/input-pasien', label: 'Input Pasien', icon: UserPlus },
-  { path: '/admin/antrian', label: 'Antrian', icon: ClipboardList },
-  { path: '/admin/audit', label: 'Audit Trail', icon: ShieldCheck },
+  { path: '/admin', label: 'Dashboard', icon: LayoutGrid },
+  { path: '/admin/input-pasien', label: 'Input Pasien', icon: UserRoundPlus },
+  { path: '/admin/antrian', label: 'Antrian', icon: ListOrdered },
+  { path: '/admin/audit', label: 'Audit Trail', icon: FileSearch },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -5,11 +5,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Toaster, toast } from 'sonner'
 import {
-  FlaskConical, Clock, CheckCircle, Package,
+  FlaskConical, Clock, CircleCheckBig, Package,
   Stethoscope, Pill, AlertTriangle, Loader2
 } from 'lucide-react'
 import { useQueue } from '@/contexts/QueueContext'
 import { useState } from 'react'
+import { StaggerContainer, StaggerItem, SlideUp } from '@/components/motion'
+import { motion } from 'framer-motion'
 
 export default function FarmasiDashboard() {
   const { patients, updatePharmacyStatus } = useQueue()
@@ -38,68 +40,65 @@ export default function FarmasiDashboard() {
     <div className="space-y-6">
       <Toaster position="top-right" richColors />
 
-      <div>
+      <SlideUp>
         <h1 className="text-2xl font-bold text-slate-900">Dashboard Farmasi</h1>
         <p className="text-sm text-slate-500 mt-1">Kelola rujukan obat dari dokter</p>
-      </div>
+      </SlideUp>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-amber-600" />
-              </div>
-              <span className="text-xs text-slate-500 font-medium">Menunggu</span>
-            </div>
-            <p className="text-2xl font-bold text-amber-600">{pendingPatients.length}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Package className="w-4 h-4 text-blue-600" />
-              </div>
-              <span className="text-xs text-slate-500 font-medium">Disiapkan</span>
-            </div>
-            <p className="text-2xl font-bold text-blue-600">{processingPatients.length}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-              </div>
-              <span className="text-xs text-slate-500 font-medium">Diserahkan</span>
-            </div>
-            <p className="text-2xl font-bold text-green-600">{completedPatients.length}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StaggerContainer className="grid grid-cols-3 gap-4" staggerDelay={0.1}>
+        {[
+          { icon: Clock, label: 'Menunggu', value: pendingPatients.length, iconBg: 'bg-amber-100 dark:bg-amber-950/50', iconColor: 'text-amber-600 dark:text-amber-400', valueColor: 'text-amber-600 dark:text-amber-400' },
+          { icon: Package, label: 'Disiapkan', value: processingPatients.length, iconBg: 'bg-blue-100 dark:bg-blue-950/50', iconColor: 'text-blue-600 dark:text-blue-400', valueColor: 'text-blue-600 dark:text-blue-400' },
+          { icon: CircleCheckBig, label: 'Diserahkan', value: completedPatients.length, iconBg: 'bg-green-100 dark:bg-green-950/50', iconColor: 'text-green-600 dark:text-green-400', valueColor: 'text-green-600 dark:text-green-400' },
+        ].map((stat) => {
+          const Icon = stat.icon
+          return (
+            <StaggerItem key={stat.label}>
+              <motion.div whileHover={{ y: -3 }}>
+                <Card className="shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`w-9 h-9 rounded-lg ${stat.iconBg} flex items-center justify-center`}>
+                        <Icon className={`w-4 h-4 ${stat.iconColor}`} />
+                      </div>
+                      <span className="text-xs text-slate-500 font-medium">{stat.label}</span>
+                    </div>
+                    <p className={`text-2xl font-bold ${stat.valueColor}`}>{stat.value}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </StaggerItem>
+          )
+        })}
+      </StaggerContainer>
 
       {/* Pending */}
       {pendingPatients.length > 0 && (
-        <div>
+        <SlideUp delay={0.2}>
           <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
             Menunggu Disiapkan ({pendingPatients.length})
           </h2>
           <div className="space-y-3">
-            {pendingPatients.map(patient => (
-              <Card key={patient.id} className="border-amber-200 bg-amber-50/30 shadow-sm">
+            {pendingPatients.map((patient, i) => (
+              <motion.div
+                key={patient.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.3 + i * 0.08 }}
+              >
+              <Card className="border-amber-200 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-950/20 shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
-                      <FlaskConical className="w-6 h-6 text-amber-600" />
+                    <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                      <FlaskConical className="w-6 h-6 text-amber-600 dark:text-amber-500" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-slate-900">{patient.name}</h3>
                         <span className="text-xs text-slate-500">{patient.age}th · {patient.queueNumber}</span>
-                        <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">Menunggu</Badge>
+                        <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50">Menunggu</Badge>
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-3">
                         <Stethoscope className="w-3 h-3" />
@@ -111,13 +110,13 @@ export default function FarmasiDashboard() {
 
                       {/* Prescriptions */}
                       {patient.prescriptions && patient.prescriptions.length > 0 && (
-                        <div className="bg-white rounded-xl p-3 border border-slate-200 space-y-2">
+                        <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3 border border-slate-200 dark:border-slate-700 space-y-2">
                           <p className="text-xs font-semibold text-slate-700 flex items-center gap-1">
                             <Pill className="w-3 h-3 text-violet-500" />Resep Obat:
                           </p>
                           {patient.prescriptions.map((rx, i) => (
-                            <div key={i} className="flex items-center gap-3 text-sm bg-slate-50 rounded-lg p-2">
-                              <span className="w-5 h-5 rounded bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold">{i+1}</span>
+                            <div key={i} className="flex items-center gap-3 text-sm bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
+                              <span className="w-5 h-5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400 flex items-center justify-center text-xs font-bold">{i+1}</span>
                               <div className="flex-1">
                                 <span className="font-medium text-slate-900">{rx.medicationName}</span>
                                 <span className="text-slate-500 ml-2">{rx.dosage}</span>
@@ -134,36 +133,43 @@ export default function FarmasiDashboard() {
                   </div>
                 </CardContent>
               </Card>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </SlideUp>
       )}
 
       {/* Processing */}
       {processingPatients.length > 0 && (
-        <div>
+        <SlideUp delay={0.3}>
           <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
             <Package className="w-5 h-5 text-blue-500" />
             Sedang Disiapkan ({processingPatients.length})
           </h2>
           <div className="space-y-3">
-            {processingPatients.map(patient => (
-              <Card key={patient.id} className="border-blue-200 bg-blue-50/30 shadow-sm">
+            {processingPatients.map((patient, i) => (
+              <motion.div
+                key={patient.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.4 + i * 0.08 }}
+              >
+              <Card className="border-blue-200 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/20 shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                      <Package className="w-6 h-6 text-blue-600" />
+                    <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                      <Package className="w-6 h-6 text-blue-600 dark:text-blue-500" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-slate-900">{patient.name}</h3>
                         <span className="text-xs text-slate-500">{patient.queueNumber}</span>
-                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">Disiapkan</Badge>
+                        <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50">Disiapkan</Badge>
                       </div>
                       {patient.prescriptions && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {patient.prescriptions.map((rx, i) => (
-                            <Badge key={i} variant="outline" className="text-xs bg-white">{rx.medicationName} {rx.dosage}</Badge>
+                            <Badge key={i} variant="outline" className="text-xs bg-white dark:bg-slate-800">{rx.medicationName} {rx.dosage}</Badge>
                           ))}
                         </div>
                       )}
@@ -173,32 +179,39 @@ export default function FarmasiDashboard() {
                       {processingId === patient.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <CheckCircle className="w-4 h-4" />
+                        <CircleCheckBig className="w-4 h-4" />
                       )}
                       Serahkan
                     </Button>
                   </div>
                 </CardContent>
               </Card>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </SlideUp>
       )}
 
       {/* Completed */}
       {completedPatients.length > 0 && (
-        <div>
+        <SlideUp delay={0.4}>
           <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-green-500" />
+            <CircleCheckBig className="w-5 h-5 text-green-500" />
             Sudah Diserahkan ({completedPatients.length})
           </h2>
           <div className="space-y-2">
-            {completedPatients.slice(0, 5).map(patient => (
-              <Card key={patient.id} className="border-slate-200 shadow-sm">
+            {completedPatients.slice(0, 5).map((patient, i) => (
+              <motion.div
+                key={patient.id}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: 0.5 + i * 0.06 }}
+              >
+              <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                      <CircleCheckBig className="w-4 h-4 text-green-600 dark:text-green-500" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-900">{patient.name}</p>
@@ -208,21 +221,27 @@ export default function FarmasiDashboard() {
                         ))}
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">Selesai</Badge>
+                    <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/50">Selesai</Badge>
                   </div>
                 </CardContent>
               </Card>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </SlideUp>
       )}
 
       {pendingPatients.length === 0 && processingPatients.length === 0 && completedPatients.length === 0 && (
-        <div className="text-center py-20">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="text-center py-20"
+        >
           <FlaskConical className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <p className="text-slate-500 font-medium">Belum ada rujukan obat</p>
           <p className="text-sm text-slate-400 mt-1">Rujukan dari dokter akan muncul di sini</p>
-        </div>
+        </motion.div>
       )}
     </div>
   )

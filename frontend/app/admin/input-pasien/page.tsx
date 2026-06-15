@@ -12,12 +12,14 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Toaster, toast } from 'sonner'
 import {
-  User, Heart, Thermometer, Wind, Activity, Clock, Pill, AlertTriangle,
-  ChevronRight, ChevronLeft, Send, RotateCcw, Check, Brain, CheckCircle
+  User, Heart, Thermometer, Wind, HeartPulse, Clock, Pill, AlertTriangle,
+  ChevronRight, ChevronLeft, Send, RotateCcw, Check, Brain, CircleCheckBig
 } from 'lucide-react'
 import type { PatientData, QueuePatient } from '@/types'
 import { INITIAL_PATIENT_DATA, SYMPTOM_OPTIONS, MOCK_TRIAGE_RESULTS } from '@/data/mock'
 import { useQueue } from '@/contexts/QueueContext'
+import { motion, AnimatePresence } from 'framer-motion'
+import { SlideUp } from '@/components/motion'
 
 export default function InputPasien() {
   const router = useRouter()
@@ -121,23 +123,38 @@ export default function InputPasien() {
 
   if (showResult && lastAdded) {
     const cfg = lastAdded.triageResult.priority === 'CRITICAL'
-      ? { bg: 'bg-red-50 border-red-200', text: 'text-red-700', badge: 'bg-red-600' }
+      ? { bg: 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50', text: 'text-red-700 dark:text-red-400', badge: 'bg-red-600' }
       : lastAdded.triageResult.priority === 'HIGH'
-      ? { bg: 'bg-orange-50 border-orange-200', text: 'text-orange-700', badge: 'bg-orange-500' }
+      ? { bg: 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50', text: 'text-orange-700 dark:text-orange-400', badge: 'bg-orange-500' }
       : lastAdded.triageResult.priority === 'MEDIUM'
-      ? { bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-700', badge: 'bg-yellow-500' }
-      : { bg: 'bg-green-50 border-green-200', text: 'text-green-700', badge: 'bg-green-500' }
+      ? { bg: 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900/50', text: 'text-yellow-700 dark:text-yellow-400', badge: 'bg-yellow-500' }
+      : { bg: 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50', text: 'text-green-700 dark:text-green-400', badge: 'bg-green-500' }
 
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
+        className="max-w-2xl mx-auto space-y-6"
+      >
         <Toaster position="top-right" richColors />
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-100 flex items-center justify-center mb-4">
-            <CheckCircle className="w-8 h-8 text-emerald-600" />
-          </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="text-center"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.1 }}
+            className="w-16 h-16 mx-auto rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center mb-4"
+          >
+            <CircleCheckBig className="w-8 h-8 text-emerald-600" />
+          </motion.div>
           <h1 className="text-2xl font-bold text-slate-900">Pasien Berhasil Didaftarkan</h1>
           <p className="text-sm text-slate-500 mt-1">Data telah dianalisis oleh AI dan masuk ke antrian</p>
-        </div>
+        </motion.div>
 
         <Card className={`border-2 ${cfg.bg}`}>
           <CardContent className="p-6">
@@ -162,11 +179,11 @@ export default function InputPasien() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl p-4 border border-slate-200">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-2 mb-2">
-                <Brain className="w-4 h-4 text-violet-600" />
+                <Brain className="w-4 h-4 text-violet-600 dark:text-violet-500" />
                 <span className="text-sm font-semibold text-slate-900">AI Reasoning</span>
-                <Badge className="bg-violet-100 text-violet-700 text-xs">
+                <Badge className="bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400 text-xs">
                   {(lastAdded.triageResult.confidence * 100).toFixed(0)}% confidence
                 </Badge>
               </div>
@@ -192,7 +209,7 @@ export default function InputPasien() {
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
-      </div>
+      </motion.div>
     )
   }
 
@@ -201,10 +218,10 @@ export default function InputPasien() {
       <Toaster position="top-right" richColors />
 
       {/* Header */}
-      <div className="mb-6">
+      <SlideUp className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Input Pasien Baru</h1>
         <p className="text-sm text-slate-500">Masukkan data lengkap pasien untuk analisis AI triage</p>
-      </div>
+      </SlideUp>
 
       {/* Progress */}
       <div className="mb-8">
@@ -213,8 +230,8 @@ export default function InputPasien() {
             <div key={i} className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                 step > i + 1 ? 'bg-blue-600 text-white' :
-                step === i + 1 ? 'bg-blue-100 text-blue-700 border-2 border-blue-600' :
-                'bg-slate-100 text-slate-400'
+                step === i + 1 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-500' :
+                'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
               }`}>
                 {step > i + 1 ? <Check className="w-4 h-4" /> : i + 1}
               </div>
@@ -224,17 +241,26 @@ export default function InputPasien() {
             </div>
           ))}
         </div>
-        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-blue-600 rounded-full transition-all duration-300"
-            style={{ width: `${(step / totalSteps) * 100}%` }}
+        <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-blue-600 rounded-full"
+            animate={{ width: `${(step / totalSteps) * 100}%` }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
           />
         </div>
       </div>
 
       {/* Step 1: Personal Data */}
+      <AnimatePresence mode="wait">
       {step === 1 && (
-        <Card className="border-slate-200 shadow-sm">
+        <motion.div
+          key="step-1"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="w-5 h-5 text-blue-600" />
@@ -277,14 +303,22 @@ export default function InputPasien() {
             </div>
           </CardContent>
         </Card>
+        </motion.div>
       )}
 
       {/* Step 2: Symptoms */}
       {step === 2 && (
-        <Card className="border-slate-200 shadow-sm">
+        <motion.div
+          key="step-2"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-blue-600" />
+              <HeartPulse className="w-5 h-5 text-blue-600" />
               Keluhan & Gejala
             </CardTitle>
             <CardDescription>Pilih gejala dan jelaskan keluhan utama pasien</CardDescription>
@@ -300,10 +334,10 @@ export default function InputPasien() {
                 {SYMPTOM_OPTIONS.map(sym => (
                   <button key={sym.value} type="button" onClick={() => toggleSymptom(sym.value)}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm border transition-all text-left ${
-                      patient.symptoms.includes(sym.value) ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                      patient.symptoms.includes(sym.value) ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
                     }`}>
                     <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                      patient.symptoms.includes(sym.value) ? 'bg-blue-500 border-blue-500' : 'border-slate-300'
+                      patient.symptoms.includes(sym.value) ? 'bg-blue-500 border-blue-500' : 'border-slate-300 dark:border-slate-600'
                     }`}>
                       {patient.symptoms.includes(sym.value) && <Check className="w-3 h-3 text-white" />}
                     </div>
@@ -339,11 +373,19 @@ export default function InputPasien() {
             </div>
           </CardContent>
         </Card>
+        </motion.div>
       )}
 
       {/* Step 3: Vital Signs */}
       {step === 3 && (
-        <Card className="border-slate-200 shadow-sm">
+        <motion.div
+          key="step-3"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-rose-500" />
@@ -358,7 +400,7 @@ export default function InputPasien() {
                 <Input id="bp" value={patient.vitalSigns.bloodPressure} onChange={e => updateVitalSign('bloodPressure', e.target.value)} placeholder="120/80" className="h-11" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="hr" className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-red-500" />Denyut Jantung (bpm) <span className="text-red-500">*</span></Label>
+                <Label htmlFor="hr" className="flex items-center gap-1.5"><HeartPulse className="w-3.5 h-3.5 text-red-500" />Denyut Jantung (bpm) <span className="text-red-500">*</span></Label>
                 <Input id="hr" type="number" value={patient.vitalSigns.heartRate || ''} onChange={e => updateVitalSign('heartRate', parseInt(e.target.value) || 0)} placeholder="72" className="h-11" />
               </div>
               <div className="space-y-2">
@@ -376,7 +418,9 @@ export default function InputPasien() {
             </div>
           </CardContent>
         </Card>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Navigation */}
       <div className="flex items-center justify-between mt-6">

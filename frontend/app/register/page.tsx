@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Activity, Eye, EyeOff, UserPlus, ArrowLeft, Shield, Stethoscope, FlaskConical } from 'lucide-react'
+import { HeartPulse, Eye, EyeOff, UserPlus, ArrowLeft, Shield, Stethoscope, FlaskConical } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import type { UserRole } from '@/types'
 import { Toaster, toast } from 'sonner'
+import { motion } from 'framer-motion'
 
 export default function Register() {
   const router = useRouter()
@@ -70,11 +71,24 @@ export default function Register() {
       <Toaster position="top-right" richColors />
 
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 right-10 w-72 h-72 bg-violet-400/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-10 left-20 w-96 h-96 bg-emerald-400/10 rounded-full blur-[120px]" />
+        <motion.div
+          className="absolute top-20 right-10 w-72 h-72 bg-violet-400/10 rounded-full blur-[100px]"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute bottom-10 left-20 w-96 h-96 bg-emerald-400/10 rounded-full blur-[120px]"
+          animate={{ scale: [1.2, 1, 1.2] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        />
       </div>
 
-      <div className="relative w-full max-w-md">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative w-full max-w-md"
+      >
         <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-6">
           <ArrowLeft className="w-4 h-4" />
           Kembali ke Beranda
@@ -82,9 +96,14 @@ export default function Register() {
 
         <Card className="bg-white/[0.03] backdrop-blur-xl border-white/10 shadow-2xl">
           <CardHeader className="text-center pb-2">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-4 shadow-xl shadow-emerald-500/20">
-              <Activity className="w-7 h-7 text-white" />
-            </div>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.2 }}
+              className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-4 shadow-xl shadow-emerald-500/20"
+            >
+              <HeartPulse className="w-7 h-7 text-white" />
+            </motion.div>
             <CardTitle className="text-2xl font-bold text-white">Daftar Akun Baru</CardTitle>
             <CardDescription className="text-slate-400">
               Buat akun untuk mengakses sistem RS Misal
@@ -186,7 +205,7 @@ export default function Register() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </div>
   )
 }
