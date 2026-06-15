@@ -23,17 +23,13 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Redirect inside useEffect to avoid rendering side-effects
-  const [isRedirecting, setIsRedirecting] = useState(false)
-
   useEffect(() => {
     if (user) {
-      setIsRedirecting(true)
       router.replace('/')
     }
   }, [user, router])
 
-  if (isRedirecting || user) {
+  if (user) {
     return null
   }
 
@@ -67,7 +63,7 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
       <Toaster position="top-right" richColors />
 
       <div className="absolute inset-0 overflow-hidden">
@@ -89,12 +85,12 @@ export default function Register() {
         transition={{ duration: 0.5 }}
         className="relative w-full max-w-md"
       >
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-6">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
           <ArrowLeft className="w-4 h-4" />
           Kembali ke Beranda
         </Link>
 
-        <Card className="bg-white/[0.03] backdrop-blur-xl border-white/10 shadow-2xl">
+        <Card className="bg-card border-border shadow-2xl">
           <CardHeader className="text-center pb-2">
             <motion.div
               initial={{ scale: 0 }}
@@ -104,36 +100,36 @@ export default function Register() {
             >
               <HeartPulse className="w-7 h-7 text-white" />
             </motion.div>
-            <CardTitle className="text-2xl font-bold text-white">Daftar Akun Baru</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardTitle className="text-2xl font-bold text-card-foreground">Daftar Akun Baru</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Buat akun untuk mengakses sistem RS Misal
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5 pt-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-slate-300 text-sm">Nama Lengkap</Label>
+                <Label htmlFor="name" className="text-muted-foreground text-sm">Nama Lengkap</Label>
                 <Input
                   id="name"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  placeholder="Dr. Nama Lengkap"
-                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500/20"
+                  placeholder="Nama Lengkap"
+                  className="h-11 bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-emerald-500/20"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reg-email" className="text-slate-300 text-sm">Email</Label>
+                <Label htmlFor="reg-email" className="text-muted-foreground text-sm">Email</Label>
                 <Input
                   id="reg-email"
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="nama@rsmisal.id"
-                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500/20"
+                  placeholder="nama@email.com"
+                  className="h-11 bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-emerald-500/20"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reg-password" className="text-slate-300 text-sm">Password</Label>
+                <Label htmlFor="reg-password" className="text-muted-foreground text-sm">Password</Label>
                 <div className="relative">
                   <Input
                     id="reg-password"
@@ -141,19 +137,19 @@ export default function Register() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="Minimal 6 karakter"
-                    className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500/20 pr-10"
+                    className="h-11 bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-emerald-500/20 pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-slate-300 text-sm">Role / Peran</Label>
+                <Label className="text-muted-foreground text-sm">Role / Peran</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {roleOptions.map(opt => {
                     const Icon = opt.icon
@@ -166,14 +162,14 @@ export default function Register() {
                         className={`p-3 rounded-xl border text-center transition-all ${
                           isSelected
                             ? 'bg-emerald-500/15 border-emerald-500/50 ring-1 ring-emerald-500/30'
-                            : 'bg-white/5 border-white/10 hover:bg-white/10'
+                            : 'bg-muted/50 border-border hover:bg-muted'
                         }`}
                       >
                         <Icon className={`w-5 h-5 mx-auto mb-1.5 ${isSelected ? 'text-emerald-400' : 'text-slate-400'}`} />
-                        <span className={`block text-xs font-semibold ${isSelected ? 'text-emerald-300' : 'text-slate-300'}`}>
+                        <span className={`block text-xs font-semibold ${isSelected ? 'text-emerald-300' : 'text-muted-foreground'}`}>
                           {opt.label}
                         </span>
-                        <span className="block text-[10px] text-slate-500 mt-0.5 leading-tight">{opt.desc}</span>
+                        <span className="block text-[10px] text-muted-foreground mt-0.5 leading-tight">{opt.desc}</span>
                       </button>
                     )
                   })}
@@ -196,7 +192,7 @@ export default function Register() {
             </form>
 
             <div className="text-center">
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 Sudah punya akun?{' '}
                 <Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
                   Masuk di sini

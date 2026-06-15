@@ -88,31 +88,31 @@ export default function AuditTrail() {
   return (
     <div className="space-y-6">
       {/* Hero with Blockchain BG */}
-      <div className="relative rounded-2xl overflow-hidden mb-8 h-48 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 flex items-center">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-400 rounded-full blur-[100px]" />
-          <div className="absolute bottom-10 right-20 w-96 h-96 bg-teal-400 rounded-full blur-[120px]" />
+      <div className="relative rounded-2xl overflow-hidden mb-8 h-48 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-900 dark:via-slate-800 dark:to-emerald-950 flex items-center border border-emerald-100 dark:border-none shadow-sm dark:shadow-none">
+        <div className="absolute inset-0 opacity-30 dark:opacity-10">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-300 dark:bg-emerald-400 rounded-full blur-[100px]" />
+          <div className="absolute bottom-10 right-20 w-96 h-96 bg-teal-300 dark:bg-teal-400 rounded-full blur-[120px]" />
         </div>
         <div className="relative z-10 px-6 sm:px-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-400/30 flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Audit Trail Blockchain</h1>
-              <p className="text-sm text-slate-400">Rekam medis tercatat immutable di Polygon</p>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Audit Trail Blockchain</h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Rekam medis tercatat immutable di Polygon</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3 mt-3">
-            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30 gap-1.5">
+            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-400/30 dark:hover:bg-emerald-500/30 gap-1.5 shadow-none">
               <CircleCheckBig className="w-3 h-3" />
               Jaringan: Polygon Amoy Testnet
             </Badge>
-            <Badge className="bg-blue-500/20 text-blue-300 border-blue-400/30 gap-1.5">
+            <Badge className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-400/30 dark:hover:bg-blue-500/30 gap-1.5 shadow-none">
               <Database className="w-3 h-3" />
               Block Terakhir: {stats.lastBlock.toLocaleString()}
             </Badge>
-            <Badge className="bg-violet-500/20 text-violet-300 border-violet-400/30 gap-1.5">
+            <Badge className="bg-violet-100 text-violet-700 border-violet-200 hover:bg-violet-200 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-400/30 dark:hover:bg-violet-500/30 gap-1.5 shadow-none">
               <Lock className="w-3 h-3" />
               {stats.verified}/{stats.total} Terverifikasi
             </Badge>
@@ -123,20 +123,22 @@ export default function AuditTrail() {
       {/* Stats Cards */}
       <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Transaksi', value: stats.total, icon: FileCheck, color: 'bg-slate-700 dark:bg-slate-700 text-white' },
-          { label: 'Terverifikasi', value: stats.verified, icon: CircleCheckBig, color: 'bg-emerald-600 text-white' },
-          { label: 'Kritis', value: stats.critical, icon: AlertTriangle, color: 'bg-red-600 text-white' },
-          { label: 'Block Height', value: stats.lastBlock.toLocaleString(), icon: Database, color: 'bg-blue-600 text-white' },
+          { label: 'Total Transaksi', value: stats.total, icon: FileCheck, color: 'bg-white dark:bg-card border border-slate-200 dark:border-border', iconColor: 'text-primary', iconBg: 'bg-primary/10 dark:bg-primary/20' },
+          { label: 'Terverifikasi', value: stats.verified, icon: CircleCheckBig, color: 'bg-white dark:bg-card border border-slate-200 dark:border-border', iconColor: 'text-emerald-600 dark:text-emerald-400', iconBg: 'bg-emerald-100 dark:bg-emerald-500/20' },
+          { label: 'Kritis', value: stats.critical, icon: AlertTriangle, color: 'bg-white dark:bg-card border border-slate-200 dark:border-border', iconColor: 'text-red-600 dark:text-red-400', iconBg: 'bg-red-100 dark:bg-red-500/20' },
+          { label: 'Block Height', value: stats.lastBlock.toLocaleString(), icon: Database, color: 'bg-white dark:bg-card border border-slate-200 dark:border-border', iconColor: 'text-blue-600 dark:text-blue-400', iconBg: 'bg-blue-100 dark:bg-blue-500/20' },
         ].map((stat, i) => {
           const Icon = stat.icon
           return (
             <StaggerItem key={i}>
-              <div className={`rounded-xl p-4 ${stat.color} transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}>
-                <div className="flex items-center gap-2 mb-2 opacity-75">
-                  <Icon className="w-4 h-4" />
-                  <span className="text-xs font-medium">{stat.label}</span>
+              <div className={`rounded-xl p-5 ${stat.color} transition-all duration-300 hover:scale-[1.02] hover:shadow-md dark:hover:shadow-none shadow-sm dark:shadow-none`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.iconBg}`}>
+                    <Icon className={`w-4 h-4 ${stat.iconColor}`} />
+                  </div>
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{stat.label}</span>
                 </div>
-                <p className="text-2xl font-bold">{stat.value}</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
               </div>
             </StaggerItem>
           )
@@ -146,7 +148,7 @@ export default function AuditTrail() {
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -161,12 +163,12 @@ export default function AuditTrail() {
               onClick={() => setPriorityFilter(p)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 priorityFilter === p
-                  ? p === 'ALL' ? 'bg-slate-700 dark:bg-slate-200 text-white dark:text-slate-900' :
+                  ? p === 'ALL' ? 'bg-primary text-primary-foreground' :
                     p === 'CRITICAL' ? 'bg-red-600 text-white' :
                     p === 'HIGH' ? 'bg-orange-500 text-white' :
                     p === 'MEDIUM' ? 'bg-yellow-500 text-white' :
                     'bg-green-500 text-white'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                  : 'bg-background text-muted-foreground border border-input hover:border-accent'
               }`}
             >
               {p === 'ALL' ? 'Semua' : getPriorityLabel(p)}
@@ -176,19 +178,19 @@ export default function AuditTrail() {
       </div>
 
       {/* Records Table */}
-      <Card className="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <Card className="border-border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
-                <th className="text-left py-3 px-4 font-semibold text-slate-700">Waktu</th>
-                <th className="text-left py-3 px-4 font-semibold text-slate-700">Pasien</th>
-                <th className="text-left py-3 px-4 font-semibold text-slate-700">Aksi</th>
-                <th className="text-left py-3 px-4 font-semibold text-slate-700">Prioritas</th>
-                <th className="text-left py-3 px-4 font-semibold text-slate-700">Transaction Hash</th>
-                <th className="text-left py-3 px-4 font-semibold text-slate-700">Block</th>
-                <th className="text-left py-3 px-4 font-semibold text-slate-700">Status</th>
-                <th className="text-left py-3 px-4 font-semibold text-slate-700">Aksi</th>
+            <thead className="bg-muted text-muted-foreground">
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4 font-semibold">Waktu</th>
+                <th className="text-left py-3 px-4 font-semibold">Pasien</th>
+                <th className="text-left py-3 px-4 font-semibold">Aksi</th>
+                <th className="text-left py-3 px-4 font-semibold">Prioritas</th>
+                <th className="text-left py-3 px-4 font-semibold">Transaction Hash</th>
+                <th className="text-left py-3 px-4 font-semibold">Block</th>
+                <th className="text-left py-3 px-4 font-semibold">Status</th>
+                <th className="text-left py-3 px-4 font-semibold">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -204,15 +206,15 @@ export default function AuditTrail() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className={`border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer ${
-                          isExpanded ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''
+                        className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${
+                          isExpanded ? 'bg-muted/50' : ''
                         }`}
                         onClick={() => setExpandedId(isExpanded ? null : record.id)}
                       >
-                        <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
+                        <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">
                           {formatTime(record.timestamp)}
                         </td>
-                        <td className="py-3 px-4 font-medium text-slate-900">
+                        <td className="py-3 px-4 font-medium text-card-foreground">
                           {record.patientName}
                         </td>
                         <td className="py-3 px-4">
@@ -228,7 +230,7 @@ export default function AuditTrail() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <code className="text-xs font-mono text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                            <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                               {truncateHash(record.txHash)}
                             </code>
                             <button
@@ -236,7 +238,7 @@ export default function AuditTrail() {
                                 e.stopPropagation()
                                 copyToClipboard(record.txHash, record.id)
                               }}
-                              className="text-slate-400 hover:text-slate-600 transition-colors"
+                              className="text-muted-foreground hover:text-foreground transition-colors"
                             >
                               {copiedHash === record.id ?
                                 <CheckCheck className="w-3.5 h-3.5 text-emerald-500" /> :
@@ -245,7 +247,7 @@ export default function AuditTrail() {
                             </button>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-slate-600 font-mono text-xs">
+                        <td className="py-3 px-4 text-muted-foreground font-mono text-xs">
                           {record.blockNumber.toLocaleString()}
                         </td>
                         <td className="py-3 px-4">
@@ -285,47 +287,47 @@ export default function AuditTrail() {
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700"
+                            className="bg-muted/30 border-b border-border"
                           >
                             <td colSpan={8} className="py-4 px-4">
                               <div className="grid md:grid-cols-2 gap-4">
                                 <div>
-                                  <h4 className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Detail Transaksi</h4>
-                                  <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
+                                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Detail Transaksi</h4>
+                                  <div className="bg-background rounded-lg p-3 border border-border space-y-2 text-xs">
                                     <div className="flex justify-between">
-                                      <span className="text-slate-500">ID Audit</span>
-                                      <span className="font-mono text-slate-700">{record.id}</span>
+                                      <span className="text-muted-foreground">ID Audit</span>
+                                      <span className="font-mono text-card-foreground">{record.id}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                      <span className="text-slate-500">Waktu Blockchain</span>
-                                      <span className="text-slate-700">{formatTime(record.timestamp)}</span>
+                                      <span className="text-muted-foreground">Waktu Blockchain</span>
+                                      <span className="text-card-foreground">{formatTime(record.timestamp)}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                      <span className="text-slate-500">Block Number</span>
-                                      <span className="font-mono text-slate-700">{record.blockNumber.toLocaleString()}</span>
+                                      <span className="text-muted-foreground">Block Number</span>
+                                      <span className="font-mono text-card-foreground">{record.blockNumber.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                      <span className="text-slate-500">Konfirmasi</span>
+                                      <span className="text-muted-foreground">Konfirmasi</span>
                                       <span className="text-emerald-600 font-medium">12 block confirmations</span>
                                     </div>
                                   </div>
                                 </div>
                                 <div>
-                                  <h4 className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Detail Triage</h4>
-                                  <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
+                                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Detail Triage</h4>
+                                  <div className="bg-background rounded-lg p-3 border border-border space-y-2 text-xs">
                                     <div className="flex justify-between">
-                                      <span className="text-slate-500">Pasien</span>
-                                      <span className="font-medium text-slate-700">{record.patientName}</span>
+                                      <span className="text-muted-foreground">Pasien</span>
+                                      <span className="font-medium text-card-foreground">{record.patientName}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                      <span className="text-slate-500">Prioritas AI</span>
+                                      <span className="text-muted-foreground">Prioritas AI</span>
                                       <Badge className={`${getPriorityBadge(record.triagePriority)} text-[10px]`}>
                                         {getPriorityLabel(record.triagePriority)}
                                       </Badge>
                                     </div>
                                     <div>
-                                      <span className="text-slate-500 block mb-1">Catatan:</span>
-                                      <p className="text-slate-700 leading-relaxed">{record.details}</p>
+                                      <span className="text-muted-foreground block mb-1">Catatan:</span>
+                                      <p className="text-card-foreground leading-relaxed">{record.details}</p>
                                     </div>
                                   </div>
                                 </div>
@@ -333,12 +335,12 @@ export default function AuditTrail() {
 
                               {/* Full Hash */}
                               <div className="mt-3">
-                                <h4 className="text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Transaction Hash Lengkap</h4>
-                                <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-lg p-2.5 border border-slate-200 dark:border-slate-700">
-                                  <code className="text-xs font-mono text-slate-600 dark:text-slate-400 flex-1 break-all">{record.txHash}</code>
+                                <h4 className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Transaction Hash Lengkap</h4>
+                                <div className="flex items-center gap-2 bg-background rounded-lg p-2.5 border border-border">
+                                  <code className="text-xs font-mono text-muted-foreground flex-1 break-all">{record.txHash}</code>
                                   <button
                                     onClick={() => copyToClipboard(record.txHash, record.id + '_full')}
-                                    className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0"
+                                    className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
                                   >
                                     {copiedHash === record.id + '_full' ?
                                       <CheckCheck className="w-4 h-4 text-emerald-500" /> :
@@ -383,15 +385,15 @@ export default function AuditTrail() {
 
         {filteredRecords.length === 0 && (
           <div className="text-center py-12">
-            <ShieldCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500 font-medium">Tidak ada data audit</p>
-            <p className="text-sm text-slate-400 mt-1">Ubah filter atau lakukan pencarian lain</p>
+            <ShieldCheck className="w-12 h-12 text-muted mx-auto mb-3" />
+            <p className="text-muted-foreground font-medium">Tidak ada data audit</p>
+            <p className="text-sm text-muted-foreground mt-1">Ubah filter atau lakukan pencarian lain</p>
           </div>
         )}
       </Card>
 
       {/* How Blockchain Audit Works */}
-      <Card className="mt-6 border-slate-200 dark:border-slate-800 shadow-sm">
+      <Card className="mt-6 border-border shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Lock className="w-5 h-5 text-emerald-600" />
@@ -431,12 +433,12 @@ export default function AuditTrail() {
             ].map((item, i) => {
               const Icon = item.icon
               return (
-                <div key={i} className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                <div key={i} className="text-center p-4 rounded-xl bg-muted/50 border border-border">
                   <div className={`w-12 h-12 rounded-xl ${item.color} flex items-center justify-center mx-auto mb-3`}>
                     <Icon className="w-6 h-6" />
                   </div>
-                  <h3 className="font-semibold text-slate-900 mb-1">{item.title}</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">{item.desc}</p>
+                  <h3 className="font-semibold text-card-foreground mb-1">{item.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
                 </div>
               )
             })}

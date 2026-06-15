@@ -30,8 +30,8 @@ export default function DokterDashboard() {
   return (
     <div className="space-y-6">
       <SlideUp>
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard Dokter</h1>
-        <p className="text-sm text-slate-500 mt-1">Selamat datang, {user?.name}</p>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard Dokter</h1>
+        <p className="text-sm text-muted-foreground mt-1">Selamat datang, {user?.name}</p>
       </SlideUp>
 
       {/* Stats */}
@@ -52,7 +52,7 @@ export default function DokterDashboard() {
                       <div className={`w-9 h-9 rounded-lg ${stat.iconBg} flex items-center justify-center`}>
                         <Icon className={`w-4 h-4 ${stat.iconColor}`} />
                       </div>
-                      <span className="text-xs text-slate-500 font-medium">{stat.label}</span>
+                      <span className="text-xs text-muted-foreground font-medium">{stat.label}</span>
                     </div>
                     <p className={`text-2xl font-bold ${stat.valueColor}`}>{stat.value}</p>
                   </CardContent>
@@ -76,8 +76,8 @@ export default function DokterDashboard() {
                 <Stethoscope className="w-6 h-6 text-white" />
               </motion.div>
               <div className="flex-1">
-                <h3 className="font-semibold text-slate-900">Lihat Antrian Pasien</h3>
-                <p className="text-xs text-slate-500">{waitingPatients.length} pasien menunggu pemeriksaan</p>
+                <h3 className="font-semibold text-card-foreground">Lihat Antrian Pasien</h3>
+                <p className="text-xs text-muted-foreground">{waitingPatients.length} pasien menunggu pemeriksaan</p>
               </div>
               <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
             </CardContent>
@@ -90,7 +90,7 @@ export default function DokterDashboard() {
       {waitingPatients.filter(p => p.triageResult.priority === 'CRITICAL' || p.triageResult.priority === 'HIGH').length > 0 && (
         <Card className="border-red-200 dark:border-red-900/50 shadow-sm">
           <CardContent className="p-5">
-            <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <h3 className="font-semibold text-card-foreground mb-4 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-500" />
               Pasien Urgen Perlu Penanganan Segera
             </h3>
@@ -108,8 +108,8 @@ export default function DokterDashboard() {
                         {patient.queueNumber}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-900">{patient.name}</p>
-                        <p className="text-xs text-slate-500 truncate">{patient.complaint}</p>
+                        <p className="text-sm font-medium text-card-foreground">{patient.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{patient.complaint}</p>
                       </div>
                       <Badge className={`text-xs ${
                         patient.triageResult.priority === 'CRITICAL' ? 'bg-red-600 text-white' : 'bg-orange-500 text-white'
@@ -129,8 +129,8 @@ export default function DokterDashboard() {
       <SlideUp delay={0.4}>
       <Card className="shadow-sm">
         <CardContent className="p-5">
-          <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-slate-500" />
+          <h3 className="font-semibold text-card-foreground mb-4 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-slate-500 dark:text-slate-400" />
             Semua Pasien Menunggu
           </h3>
           <div className="space-y-2">
@@ -142,7 +142,7 @@ export default function DokterDashboard() {
                 transition={{ duration: 0.3, delay: 0.5 + i * 0.07 }}
               >
               <Link href={`/dokter/periksa/${patient.id}`}>
-                <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                <div className="flex items-center gap-4 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold text-white ${
                     patient.triageResult.priority === 'CRITICAL' ? 'bg-red-600' :
                     patient.triageResult.priority === 'HIGH' ? 'bg-orange-500' :
@@ -151,10 +151,10 @@ export default function DokterDashboard() {
                     {patient.queueNumber}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900">{patient.name}</p>
-                    <p className="text-xs text-slate-500 truncate">{patient.complaint}</p>
+                    <p className="text-sm font-medium text-card-foreground">{patient.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{patient.complaint}</p>
                   </div>
-                  <div className="text-right text-xs text-slate-500">
+                  <div className="text-right text-xs text-muted-foreground">
                     <p>{patient.age}th · {patient.gender === 'L' ? 'L' : 'P'}</p>
                     <p>SpO2: {patient.vitalSigns.oxygenSaturation}%</p>
                   </div>
@@ -167,7 +167,7 @@ export default function DokterDashboard() {
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-sm text-slate-400 text-center py-8"
+                className="text-sm text-muted-foreground text-center py-8"
               >
                 Tidak ada pasien menunggu
               </motion.p>

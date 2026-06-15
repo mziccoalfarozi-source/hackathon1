@@ -34,8 +34,8 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <SlideUp>
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard Admin</h1>
-        <p className="text-sm text-slate-500 mt-1">Kelola pendaftaran dan antrian pasien RS Misal</p>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard Admin</h1>
+        <p className="text-sm text-muted-foreground mt-1">Kelola pendaftaran dan antrian pasien RS Misal</p>
       </SlideUp>
 
       {/* Quick Actions */}
@@ -52,8 +52,8 @@ export default function AdminDashboard() {
                     <UserRoundPlus className="w-6 h-6 text-white" />
                   </motion.div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-slate-900">Input Pasien Baru</h3>
-                    <p className="text-xs text-slate-500">Daftarkan pasien dan analisis triage AI</p>
+                    <h3 className="font-semibold text-card-foreground">Input Pasien Baru</h3>
+                    <p className="text-xs text-muted-foreground">Daftarkan pasien dan analisis triage AI</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
                 </CardContent>
@@ -73,8 +73,8 @@ export default function AdminDashboard() {
                     <ListOrdered className="w-6 h-6 text-white" />
                   </motion.div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-slate-900">Lihat Antrian</h3>
-                    <p className="text-xs text-slate-500">{stats.waiting} pasien menunggu</p>
+                    <h3 className="font-semibold text-card-foreground">Lihat Antrian</h3>
+                    <p className="text-xs text-muted-foreground">{stats.waiting} pasien menunggu</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
                 </CardContent>
@@ -87,7 +87,7 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-4" staggerDelay={0.08}>
         {[
-          { icon: Users, label: 'Total Pasien', value: stats.total, iconBg: 'bg-slate-100 dark:bg-slate-800', iconColor: 'text-slate-600 dark:text-slate-300', valueColor: 'text-slate-900 dark:text-slate-100' },
+          { icon: Users, label: 'Total Pasien', value: stats.total, iconBg: 'bg-muted', iconColor: 'text-muted-foreground', valueColor: 'text-card-foreground' },
           { icon: AlertTriangle, label: 'Kritis', value: stats.critical, iconBg: 'bg-red-100 dark:bg-red-950/50', iconColor: 'text-red-600 dark:text-red-400', valueColor: 'text-red-600 dark:text-red-400' },
           { icon: Clock, label: 'Menunggu', value: stats.waiting, iconBg: 'bg-amber-100 dark:bg-amber-950/50', iconColor: 'text-amber-600 dark:text-amber-400', valueColor: 'text-amber-600 dark:text-amber-400' },
           { icon: CircleCheckBig, label: 'Selesai', value: stats.completed, iconBg: 'bg-green-100 dark:bg-green-950/50', iconColor: 'text-green-600 dark:text-green-400', valueColor: 'text-green-600 dark:text-green-400' },
@@ -117,8 +117,8 @@ export default function AdminDashboard() {
       <SlideUp delay={0.3}>
         <Card className="shadow-sm">
           <CardContent className="p-5">
-            <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-slate-500" />
+            <h3 className="font-semibold text-card-foreground mb-4 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-muted-foreground" />
               Distribusi Prioritas
             </h3>
             <div className="grid grid-cols-4 gap-3">
@@ -129,7 +129,7 @@ export default function AdminDashboard() {
                 { label: 'Rendah', count: stats.low, color: 'bg-green-500', lightColor: 'bg-green-100 text-green-700' },
               ].map(item => (
                 <div key={item.label} className="text-center">
-                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 mb-2 overflow-hidden">
+                  <div className="h-2 rounded-full bg-muted mb-2 overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${stats.total > 0 ? (item.count / stats.total) * 100 : 0}%` }}
@@ -150,8 +150,8 @@ export default function AdminDashboard() {
         <Card className="shadow-sm">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                <HeartPulse className="w-4 h-4 text-slate-500" />
+              <h3 className="font-semibold text-card-foreground flex items-center gap-2">
+                <HeartPulse className="w-4 h-4 text-muted-foreground" />
                 Pasien Terbaru
               </h3>
               <Link href="/admin/antrian">
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: 0.5 + i * 0.08 }}
-                  className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="flex items-center gap-4 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
                 >
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold text-white ${
                     patient.triageResult.priority === 'CRITICAL' ? 'bg-red-500' :
@@ -177,8 +177,8 @@ export default function AdminDashboard() {
                     {patient.queueNumber}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900 truncate">{patient.name}</p>
-                    <p className="text-xs text-slate-500 truncate">{patient.complaint}</p>
+                    <p className="text-sm font-medium text-card-foreground truncate">{patient.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{patient.complaint}</p>
                   </div>
                   <Badge variant="outline" className={`text-xs ${
                     patient.status === 'WAITING' ? 'bg-amber-50 text-amber-700 border-amber-200' :

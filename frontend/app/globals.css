@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @plugin "tailwindcss-animate";
 
 @theme {
@@ -67,6 +69,7 @@
    LIGHT MODE TOKENS  (Medical Green / Clean White)
    ============================================================ */
 :root {
+  color-scheme: light;
   --background: 210 20% 97%;      /* Soft off-white – bukan putih murni */
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;
@@ -106,6 +109,7 @@
    DARK MODE TOKENS  (Cyberpunk / Modern Tech)
    ============================================================ */
 .dark {
+  color-scheme: dark;
   --background: 222 47% 9%;       /* Deep slate – bukan hitam pekat */
   --foreground: 213 31% 91%;
   --card: 222 40% 13%;            /* Card sedikit lebih terang dari bg */
@@ -146,75 +150,43 @@
 @layer base {
   * {
     @apply border-border;
-    /* Transisi warna global – membuat pergantian tema sangat smooth */
-    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-    transition-duration: 250ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  /* Animasi motion tidak boleh tertimpa transisi CSS */
-  [style*="transform"],
-  [style*="opacity"],
-  [style*="translate"],
-  [style*="scale"] {
-    transition-property: background-color, border-color, color;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300 antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
+}
 
-  /* ---- TABLE DARK MODE: fix hardcoded colors di tabel ---- */
-  .dark table thead tr {
-    background-color: hsl(var(--card)) !important;
-    border-bottom-color: hsl(var(--border)) !important;
-  }
-  .dark table th {
-    color: hsl(var(--muted-foreground)) !important;
-  }
-  .dark table tbody tr {
-    border-bottom-color: hsl(var(--border));
-  }
-  .dark table tbody tr:hover {
-    background-color: hsl(var(--muted) / 0.5) !important;
-  }
-  .dark table td {
-    color: hsl(var(--card-foreground));
-  }
-  /* Fix inline bg-slate / bg-white yang ada di dalam tabel */
-  .dark .bg-slate-50\/50 { background-color: hsl(var(--muted) / 0.3) !important; }
-  .dark .bg-white { background-color: hsl(var(--card)) !important; }
-  .dark .bg-slate-50 { background-color: hsl(var(--background)) !important; }
-  .dark .bg-slate-100 { background-color: hsl(var(--muted)) !important; }
-
-  /* ---- code / mono chips ---- */
-  .dark code.font-mono,
-  .dark .bg-slate-100.px-1\.5 {
-    background-color: hsl(var(--muted)) !important;
-    color: hsl(var(--foreground)) !important;
-  }
+/* HILANGKAN SCROLLBAR TOTAL DI SEMUA PAGE */
+::-webkit-scrollbar {
+  display: none !important;
+}
+* {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;      /* Firefox */
 }
 
 /* ============================================================
-   SCROLLBAR
+   VIEW TRANSITION THEME ANIMATION
    ============================================================ */
-html {
-  scroll-behavior: smooth;
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+/* Ketika berganti ke Light Mode (animasi memperkecil dark) */
+::view-transition-old(root) {
+  z-index: 9999;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+::view-transition-new(root) {
+  z-index: 1;
 }
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 4px;
+
+/* Ketika berganti ke Dark Mode (animasi memperbesar dark) */
+.dark::view-transition-old(root) {
+  z-index: 1;
 }
-.dark ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+.dark::view-transition-new(root) {
+  z-index: 9999;
 }

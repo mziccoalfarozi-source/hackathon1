@@ -8,6 +8,7 @@ interface AuthContextType {
   isLoading: boolean
   login: (email: string, password: string) => { success: boolean; error?: string }
   register: (name: string, email: string, password: string, role: UserRole) => { success: boolean; error?: string }
+  changePassword: (userId: string, newPassword: string) => { success: boolean; error?: string }
   logout: () => void
 }
 
@@ -17,12 +18,28 @@ const DEFAULT_USERS: User[] = [
   { id: 'admin-1', name: 'Admin RS Misal', email: 'admin@rsmisal.id', password: 'admin123', role: 'admin' },
   { id: 'dokter-1', name: 'dr. Ahmad Fauzi, Sp.PD', email: 'dokter@rsmisal.id', password: 'dokter123', role: 'dokter' },
   { id: 'farmasi-1', name: 'Apt. Siti Rahayu', email: 'farmasi@rsmisal.id', password: 'farmasi123', role: 'farmasi' },
+  { id: 'pasien-1', name: 'Budi Santoso', email: 'pasien@rsmisal.id', password: 'pasien123', role: 'pasien' },
+  { id: 'pasien-2', name: 'Joko Anonim', email: 'joko@rsmisal.id', password: 'joko123', role: 'pasien' },
 ]
 
 function getStoredUsers(): User[] {
   try {
     const stored = localStorage.getItem('rs_misal_users')
-    if (stored) return JSON.parse(stored)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      // Auto-inject missing dummy accounts (for backward compatibility)
+      let updated = false
+      for (const defaultUser of DEFAULT_USERS) {
+        if (!parsed.find((u: User) => u.id === defaultUser.id)) {
+          parsed.push(defaultUser)
+          updated = true
+        }
+      }
+      if (updated) {
+        localStorage.setItem('rs_misal_users', JSON.stringify(parsed))
+      }
+      return parsed
+    }
   } catch { /* ignore */ }
   localStorage.setItem('rs_misal_users', JSON.stringify(DEFAULT_USERS))
   return [...DEFAULT_USERS]
@@ -41,9 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const stored = getStoredCurrentUser()
-    setUser(stored)
-    setIsLoading(false)
+    // Avoid setting state synchronously during render/effect phase
+    setTimeout(() => {
+      const stored = getStoredCurrentUser()
+      setUser(stored)
+      setIsLoading(false)
+    }, 0)
   }, [])
 
   const login = (email: string, password: string) => {
@@ -74,13 +94,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true }
   }
 
+  const changePassword = (userId: string, newPassword: string) => {
+    const users = getStoredUsers()
+    const index = users.findIndex(u => u.id === userId)
+    if (index === -1) return { success: false, error: 'User tidak ditemukan' }
+    
+    users[index].password = newPassword
+    localStorage.setItem('rs_misal_users', JSON.stringify(users))
+    
+    if (user?.id === userId) {
+      const updatedUser = { ...user, password: newPassword }
+      setUser(updatedUser)
+      localStorage.setItem('rs_misal_current_user', JSON.stringify(updatedUser))
+    }
+    
+    return { success: true }
+  }
+
   const logout = () => {
     setUser(null)
     localStorage.removeItem('rs_misal_current_user')
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, changePassword, logout }}>
       {children}
     </AuthContext.Provider>
   )
@@ -97,6 +134,7 @@ export function getRoleDashboardPath(role: UserRole): string {
     case 'admin': return '/admin'
     case 'dokter': return '/dokter'
     case 'farmasi': return '/farmasi'
+    case 'pasien': return '/pasien'
   }
 }
 
@@ -105,5 +143,6 @@ export function getRoleLabel(role: UserRole): string {
     case 'admin': return 'Admin'
     case 'dokter': return 'Dokter'
     case 'farmasi': return 'Farmasi'
+    case 'pasien': return 'Pasien'
   }
 }

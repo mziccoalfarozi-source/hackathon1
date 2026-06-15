@@ -38,8 +38,8 @@ export default function PeriksaPasien() {
   if (!patient) {
     return (
       <div className="text-center py-20">
-        <Stethoscope className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-        <p className="text-slate-500 font-medium">Pasien tidak ditemukan</p>
+        <Stethoscope className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+        <p className="text-muted-foreground font-medium">Pasien tidak ditemukan</p>
         <Button variant="outline" onClick={() => router.push('/dokter')} className="mt-4 gap-2">
           <ArrowLeft className="w-4 h-4" />Kembali
         </Button>
@@ -109,13 +109,13 @@ export default function PeriksaPasien() {
 
       {/* Patient Status Banner */}
       {needsAssignment && (
-        <Card className="border-amber-200 bg-amber-50">
+        <Card className="border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-500" />
               <div>
-                <p className="font-medium text-amber-800">Pasien belum ditangani</p>
-                <p className="text-xs text-amber-600">Klik tombol untuk mulai memeriksa pasien ini</p>
+                <p className="font-medium text-amber-800 dark:text-amber-400">Pasien belum ditangani</p>
+                <p className="text-xs text-amber-600 dark:text-amber-500">Klik tombol untuk mulai memeriksa pasien ini</p>
               </div>
             </div>
             <Button onClick={handleAssign} className="bg-amber-600 hover:bg-amber-700 gap-2">
@@ -130,10 +130,10 @@ export default function PeriksaPasien() {
         <div className="lg:col-span-1 space-y-4">
           {/* Priority */}
           <Card className={`border-2 ${
-            patient.triageResult.priority === 'CRITICAL' ? 'border-red-200 bg-red-50' :
-            patient.triageResult.priority === 'HIGH' ? 'border-orange-200 bg-orange-50' :
-            patient.triageResult.priority === 'MEDIUM' ? 'border-yellow-200 bg-yellow-50' :
-            'border-green-200 bg-green-50'
+            patient.triageResult.priority === 'CRITICAL' ? 'border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30' :
+            patient.triageResult.priority === 'HIGH' ? 'border-orange-200 dark:border-orange-900/50 bg-orange-50 dark:bg-orange-950/30' :
+            patient.triageResult.priority === 'MEDIUM' ? 'border-yellow-200 dark:border-yellow-900/50 bg-yellow-50 dark:bg-yellow-950/30' :
+            'border-green-200 dark:border-green-900/50 bg-green-50 dark:bg-green-950/30'
           }`}>
             <CardContent className="p-4 text-center">
               <Badge className={`text-sm mb-2 ${
@@ -143,8 +143,8 @@ export default function PeriksaPasien() {
               } text-white`}>
                 {patient.triageResult.priorityLabel}
               </Badge>
-              <p className="text-lg font-bold text-slate-900">{patient.queueNumber}</p>
-              <p className="text-xs text-slate-500">AI Confidence: {(patient.triageResult.confidence * 100).toFixed(0)}%</p>
+              <p className="text-lg font-bold text-card-foreground">{patient.queueNumber}</p>
+              <p className="text-xs text-muted-foreground">AI Confidence: {(patient.triageResult.confidence * 100).toFixed(0)}%</p>
             </CardContent>
           </Card>
 
@@ -156,25 +156,25 @@ export default function PeriksaPasien() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-slate-500">Nama</span><span className="font-medium">{patient.name}</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">Usia</span><span className="font-medium">{patient.age} th ({patient.gender === 'L' ? 'L' : 'P'})</span></div>
-              <div className="flex justify-between"><span className="text-slate-500">NIK</span><span className="font-medium text-xs">{patient.nik}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Nama</span><span className="font-medium">{patient.name}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Usia</span><span className="font-medium">{patient.age} th ({patient.gender === 'L' ? 'L' : 'P'})</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">NIK</span><span className="font-medium text-xs">{patient.nik}</span></div>
               <Separator />
               <div>
-                <span className="text-slate-500 block mb-1">Keluhan</span>
-                <p className="text-xs bg-slate-50 dark:bg-slate-800/80 p-2 rounded-lg leading-relaxed">{patient.complaint}</p>
+                <span className="text-muted-foreground block mb-1">Keluhan</span>
+                <p className="text-xs bg-muted p-2 rounded-lg leading-relaxed">{patient.complaint}</p>
               </div>
               <div>
-                <span className="text-slate-500 block mb-1">Gejala</span>
+                <span className="text-muted-foreground block mb-1">Gejala</span>
                 <div className="flex flex-wrap gap-1">
                   {patient.symptoms.map(s => (
-                    <Badge key={s} variant="outline" className="text-xs bg-white dark:bg-slate-800">{getSymptomLabel(s)}</Badge>
+                    <Badge key={s} variant="outline" className="text-xs bg-background">{getSymptomLabel(s)}</Badge>
                   ))}
                 </div>
               </div>
               {patient.allergies && (
                 <div>
-                  <span className="text-slate-500 block mb-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-amber-500" />Alergi</span>
+                  <span className="text-muted-foreground block mb-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3 text-amber-500" />Alergi</span>
                   <p className="text-xs bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg text-amber-800 dark:text-amber-500">{patient.allergies}</p>
                 </div>
               )}
@@ -201,8 +201,8 @@ export default function PeriksaPasien() {
                   <div key={i} className={`flex items-center gap-3 p-2 rounded-lg ${v.bg}`}>
                     <Icon className={`w-4 h-4 ${v.color}`} />
                     <div className="flex-1">
-                      <p className="text-xs text-slate-500">{v.label}</p>
-                      <p className="font-semibold text-slate-900 text-sm">{v.value} <span className="text-xs font-normal text-slate-500">{v.unit}</span></p>
+                      <p className="text-xs text-muted-foreground">{v.label}</p>
+                      <p className="font-semibold text-card-foreground text-sm">{v.value} <span className="text-xs font-normal text-muted-foreground">{v.unit}</span></p>
                     </div>
                   </div>
                 )
@@ -223,7 +223,7 @@ export default function PeriksaPasien() {
             <CardContent>
               <ul className="space-y-2">
                 {patient.triageResult.reasoning.map((r, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                  <li key={i} className="flex items-start gap-2 text-sm text-foreground">
                     <span className="w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i+1}</span>
                     {r}
                   </li>
@@ -272,9 +272,9 @@ export default function PeriksaPasien() {
 
                 <div className="space-y-4">
                   {prescriptions.map((rx, idx) => (
-                    <div key={rx.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700 relative">
+                    <div key={rx.id} className="bg-muted/50 rounded-xl p-4 border border-border relative">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-bold text-slate-500">Obat #{idx + 1}</span>
+                        <span className="text-xs font-bold text-muted-foreground">Obat #{idx + 1}</span>
                         {prescriptions.length > 1 && (
                           <button onClick={() => removePrescription(rx.id)} className="text-red-400 hover:text-red-600">
                             <Trash2 className="w-4 h-4" />

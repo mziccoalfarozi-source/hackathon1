@@ -20,17 +20,13 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Redirect inside useEffect to avoid rendering side-effects
-  const [isRedirecting, setIsRedirecting] = useState(false)
-
   useEffect(() => {
     if (user) {
-      setIsRedirecting(true)
       router.replace(getRoleDashboardPath(user.role))
     }
   }, [user, router])
 
-  if (isRedirecting || user) {
+  if (user) {
     return null
   }
 
@@ -62,10 +58,12 @@ export default function Login() {
     { role: 'Admin', email: 'admin@rsmisal.id', password: 'admin123' },
     { role: 'Dokter', email: 'dokter@rsmisal.id', password: 'dokter123' },
     { role: 'Farmasi', email: 'farmasi@rsmisal.id', password: 'farmasi123' },
+    { role: 'Pasien 1', email: 'pasien@rsmisal.id', password: 'pasien123' },
+    { role: 'Pasien 2', email: 'joko@rsmisal.id', password: 'joko123' },
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
       <Toaster position="top-right" richColors />
 
       {/* Background effects */}
@@ -89,12 +87,12 @@ export default function Login() {
         className="relative w-full max-w-md"
       >
         {/* Back link */}
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-6">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
           <ArrowLeft className="w-4 h-4" />
           Kembali ke Beranda
         </Link>
 
-        <Card className="bg-white/[0.03] backdrop-blur-xl border-white/10 shadow-2xl">
+        <Card className="bg-card border-border shadow-2xl">
           <CardHeader className="text-center pb-2">
             <motion.div
               initial={{ scale: 0 }}
@@ -104,26 +102,26 @@ export default function Login() {
             >
               <HeartPulse className="w-7 h-7 text-white" />
             </motion.div>
-            <CardTitle className="text-2xl font-bold text-white">Masuk ke RS Misal</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardTitle className="text-2xl font-bold text-card-foreground">Masuk ke RS Misal</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Masuk dengan akun yang telah terdaftar
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5 pt-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-300 text-sm">Email</Label>
+                <Label htmlFor="email" className="text-muted-foreground text-sm">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="nama@rsmisal.id"
-                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500/20"
+                  className="h-11 bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-emerald-500/20"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-300 text-sm">Password</Label>
+                <Label htmlFor="password" className="text-muted-foreground text-sm">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -131,12 +129,12 @@ export default function Login() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="Masukkan password"
-                    className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500/20 pr-10"
+                    className="h-11 bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-emerald-500/20 pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -159,7 +157,7 @@ export default function Login() {
             </form>
 
             <div className="text-center">
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 Belum punya akun?{' '}
                 <Link href="/register" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
                   Daftar sekarang
@@ -167,15 +165,14 @@ export default function Login() {
               </p>
             </div>
 
-            {/* Demo accounts */}
-            <div className="border-t border-white/10 pt-4">
-              <p className="text-xs text-slate-500 text-center mb-3">Akun Demo (klik untuk mengisi)</p>
+            <div className="border-t border-border pt-4">
+              <p className="text-xs text-muted-foreground text-center mb-3">Akun Demo (klik untuk mengisi)</p>
               <div className="grid grid-cols-3 gap-2">
                 {demoAccounts.map(acc => (
                   <button
                     key={acc.role}
                     onClick={() => { setEmail(acc.email); setPassword(acc.password) }}
-                    className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-slate-300 hover:text-white transition-all text-center"
+                    className="px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted border border-border text-xs text-muted-foreground hover:text-foreground transition-all text-center"
                   >
                     <span className="block font-semibold">{acc.role}</span>
                   </button>

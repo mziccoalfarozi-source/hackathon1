@@ -1,5 +1,5 @@
 export type PriorityLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
-export type UserRole = 'admin' | 'dokter' | 'farmasi'
+export type UserRole = 'admin' | 'dokter' | 'farmasi' | 'pasien'
 
 export interface User {
   id: string
@@ -15,6 +15,20 @@ export interface VitalSigns {
   temperature: number
   oxygenSaturation: number
   respiratoryRate: number
+}
+
+export interface RegisteredPatient {
+  id: string
+  name: string
+  dob: string
+  age: number
+  gender: 'L' | 'P'
+  nik?: string
+  bpjs?: string
+  phone: string
+  address: string
+  faskes?: string
+  userId?: string // Tautkan ke akun login
 }
 
 export interface PatientData {

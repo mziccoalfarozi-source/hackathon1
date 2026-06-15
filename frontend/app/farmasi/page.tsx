@@ -17,9 +17,65 @@ export default function FarmasiDashboard() {
   const { patients, updatePharmacyStatus } = useQueue()
   const [processingId, setProcessingId] = useState<string | null>(null)
 
-  const pendingPatients = patients.filter(p => p.pharmacyStatus === 'PENDING')
-  const processingPatients = patients.filter(p => p.pharmacyStatus === 'PROCESSING')
-  const completedPatients = patients.filter(p => p.pharmacyStatus === 'COMPLETED')
+  let pendingPatients = patients.filter(p => p.pharmacyStatus === 'PENDING')
+  let processingPatients = patients.filter(p => p.pharmacyStatus === 'PROCESSING')
+  let completedPatients = patients.filter(p => p.pharmacyStatus === 'COMPLETED')
+
+  // Inject dummy data if queue is completely empty for UI demonstration
+  if (pendingPatients.length === 0 && processingPatients.length === 0 && completedPatients.length === 0) {
+    pendingPatients = [
+      {
+        id: 'dummy-farm-1',
+        name: 'Ahmad Faisal',
+        age: 50,
+        gender: 'L',
+        status: 'COMPLETED',
+        queueNumber: 'A-010',
+        doctorName: 'dr. Budi Setiawan, Sp.PD',
+        diagnosis: 'Diabetes Mellitus Tipe 2',
+        prescriptions: [
+          { medicationName: 'Metformin', dosage: '500mg', frequency: '3x sehari', duration: '30 hari' },
+          { medicationName: 'Glimepiride', dosage: '2mg', frequency: '1x sehari', duration: '30 hari' }
+        ],
+        pharmacyStatus: 'PENDING'
+      }
+    ] as any
+
+    processingPatients = [
+      {
+        id: 'dummy-farm-2',
+        name: 'Dewi Lestari',
+        age: 28,
+        gender: 'P',
+        status: 'COMPLETED',
+        queueNumber: 'B-024',
+        doctorName: 'dr. Siti Aminah, Sp.OG',
+        diagnosis: 'Anemia defisiensi besi',
+        prescriptions: [
+          { medicationName: 'Sangobion', dosage: '1 kapsul', frequency: '1x sehari', duration: '14 hari' }
+        ],
+        pharmacyStatus: 'PROCESSING'
+      }
+    ] as any
+
+    completedPatients = [
+      {
+        id: 'dummy-farm-3',
+        name: 'Ratna Mutiara',
+        age: 35,
+        gender: 'P',
+        status: 'COMPLETED',
+        queueNumber: 'C-005',
+        doctorName: 'dr. Andi Hakim, Sp.THT',
+        diagnosis: 'Faringitis Akut',
+        prescriptions: [
+          { medicationName: 'Amoxicillin', dosage: '500mg', frequency: '3x sehari', duration: '5 hari' },
+          { medicationName: 'Paracetamol', dosage: '500mg', frequency: '3x sehari', duration: '5 hari' }
+        ],
+        pharmacyStatus: 'COMPLETED'
+      }
+    ] as any
+  }
 
   const handleProcess = (id: string) => {
     updatePharmacyStatus(id, 'PROCESSING')
@@ -41,8 +97,8 @@ export default function FarmasiDashboard() {
       <Toaster position="top-right" richColors />
 
       <SlideUp>
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard Farmasi</h1>
-        <p className="text-sm text-slate-500 mt-1">Kelola rujukan obat dari dokter</p>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard Farmasi</h1>
+        <p className="text-sm text-muted-foreground mt-1">Kelola rujukan obat dari dokter</p>
       </SlideUp>
 
       {/* Stats */}
@@ -62,7 +118,7 @@ export default function FarmasiDashboard() {
                       <div className={`w-9 h-9 rounded-lg ${stat.iconBg} flex items-center justify-center`}>
                         <Icon className={`w-4 h-4 ${stat.iconColor}`} />
                       </div>
-                      <span className="text-xs text-slate-500 font-medium">{stat.label}</span>
+                      <span className="text-xs text-muted-foreground font-medium">{stat.label}</span>
                     </div>
                     <p className={`text-2xl font-bold ${stat.valueColor}`}>{stat.value}</p>
                   </CardContent>
@@ -76,7 +132,7 @@ export default function FarmasiDashboard() {
       {/* Pending */}
       {pendingPatients.length > 0 && (
         <SlideUp delay={0.2}>
-          <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
             Menunggu Disiapkan ({pendingPatients.length})
           </h2>
@@ -96,11 +152,11 @@ export default function FarmasiDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-slate-900">{patient.name}</h3>
-                        <span className="text-xs text-slate-500">{patient.age}th · {patient.queueNumber}</span>
+                        <h3 className="font-semibold text-card-foreground">{patient.name}</h3>
+                        <span className="text-xs text-muted-foreground">{patient.age}th · {patient.queueNumber}</span>
                         <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50">Menunggu</Badge>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-3">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
                         <Stethoscope className="w-3 h-3" />
                         <span>Dokter: {patient.doctorName || '-'}</span>
                         {patient.diagnosis && (
@@ -110,18 +166,18 @@ export default function FarmasiDashboard() {
 
                       {/* Prescriptions */}
                       {patient.prescriptions && patient.prescriptions.length > 0 && (
-                        <div className="bg-white dark:bg-slate-800/80 rounded-xl p-3 border border-slate-200 dark:border-slate-700 space-y-2">
-                          <p className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                        <div className="bg-background rounded-xl p-3 border border-border space-y-2">
+                          <p className="text-xs font-semibold text-card-foreground flex items-center gap-1">
                             <Pill className="w-3 h-3 text-violet-500" />Resep Obat:
                           </p>
                           {patient.prescriptions.map((rx, i) => (
-                            <div key={i} className="flex items-center gap-3 text-sm bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2">
+                            <div key={i} className="flex items-center gap-3 text-sm bg-muted rounded-lg p-2">
                               <span className="w-5 h-5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400 flex items-center justify-center text-xs font-bold">{i+1}</span>
                               <div className="flex-1">
-                                <span className="font-medium text-slate-900">{rx.medicationName}</span>
-                                <span className="text-slate-500 ml-2">{rx.dosage}</span>
+                                <span className="font-medium text-card-foreground">{rx.medicationName}</span>
+                                <span className="text-muted-foreground ml-2">{rx.dosage}</span>
                               </div>
-                              <span className="text-xs text-slate-500">{rx.frequency} · {rx.duration}</span>
+                              <span className="text-xs text-muted-foreground">{rx.frequency} · {rx.duration}</span>
                             </div>
                           ))}
                         </div>
@@ -142,7 +198,7 @@ export default function FarmasiDashboard() {
       {/* Processing */}
       {processingPatients.length > 0 && (
         <SlideUp delay={0.3}>
-          <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
             <Package className="w-5 h-5 text-blue-500" />
             Sedang Disiapkan ({processingPatients.length})
           </h2>
@@ -162,14 +218,14 @@ export default function FarmasiDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-slate-900">{patient.name}</h3>
-                        <span className="text-xs text-slate-500">{patient.queueNumber}</span>
+                        <h3 className="font-semibold text-card-foreground">{patient.name}</h3>
+                        <span className="text-xs text-muted-foreground">{patient.queueNumber}</span>
                         <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50">Disiapkan</Badge>
                       </div>
                       {patient.prescriptions && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {patient.prescriptions.map((rx, i) => (
-                            <Badge key={i} variant="outline" className="text-xs bg-white dark:bg-slate-800">{rx.medicationName} {rx.dosage}</Badge>
+                            <Badge key={i} variant="outline" className="text-xs bg-background">{rx.medicationName} {rx.dosage}</Badge>
                           ))}
                         </div>
                       )}
@@ -195,7 +251,7 @@ export default function FarmasiDashboard() {
       {/* Completed */}
       {completedPatients.length > 0 && (
         <SlideUp delay={0.4}>
-          <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
             <CircleCheckBig className="w-5 h-5 text-green-500" />
             Sudah Diserahkan ({completedPatients.length})
           </h2>
@@ -207,17 +263,17 @@ export default function FarmasiDashboard() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: 0.5 + i * 0.06 }}
               >
-              <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+              <Card className="border-border shadow-sm">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
                       <CircleCheckBig className="w-4 h-4 text-green-600 dark:text-green-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900">{patient.name}</p>
+                      <p className="text-sm font-medium text-card-foreground">{patient.name}</p>
                       <div className="flex gap-1 mt-0.5">
                         {patient.prescriptions?.map((rx, i) => (
-                          <span key={i} className="text-xs text-slate-500">{rx.medicationName}{i < (patient.prescriptions?.length || 0) - 1 ? ',' : ''}</span>
+                          <span key={i} className="text-xs text-muted-foreground">{rx.medicationName}{i < (patient.prescriptions?.length || 0) - 1 ? ',' : ''}</span>
                         ))}
                       </div>
                     </div>
@@ -238,9 +294,9 @@ export default function FarmasiDashboard() {
           transition={{ duration: 0.4 }}
           className="text-center py-20"
         >
-          <FlaskConical className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500 font-medium">Belum ada rujukan obat</p>
-          <p className="text-sm text-slate-400 mt-1">Rujukan dari dokter akan muncul di sini</p>
+          <FlaskConical className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground font-medium">Belum ada rujukan obat</p>
+          <p className="text-sm text-muted-foreground mt-1">Rujukan dari dokter akan muncul di sini</p>
         </motion.div>
       )}
     </div>

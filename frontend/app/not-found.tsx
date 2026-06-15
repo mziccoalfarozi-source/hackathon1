@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -80,7 +80,7 @@ export default function NotFound() {
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-3">
             Halaman Tidak Ditemukan
           </h2>
-          <p className="text-sm sm:text-base text-slate-400 mb-8 leading-relaxed max-w-sm mx-auto">
+          <p className="text-sm sm:text-base text-muted-foreground mb-8 leading-relaxed max-w-sm mx-auto">
             Maaf, halaman yang Anda cari tidak ada atau mungkin telah dipindahkan. 
             Pastikan URL yang Anda masukkan sudah benar.
           </p>
@@ -117,7 +117,7 @@ export default function NotFound() {
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
             <HeartPulse className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-xs text-slate-500 font-medium">RS Misal Rumah Sakit Terpercaya</span>
+          <span className="text-xs text-muted-foreground font-medium">RS Misal Rumah Sakit Terpercaya</span>
         </motion.div>
       </div>
     </div>

@@ -21,8 +21,8 @@ export default function DokterAntrian() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Antrian Pasien</h1>
-        <p className="text-sm text-slate-500 mt-1">{waitingPatients.length} pasien menunggu pemeriksaan</p>
+        <h1 className="text-2xl font-bold text-foreground">Antrian Pasien</h1>
+        <p className="text-sm text-muted-foreground mt-1">{waitingPatients.length} pasien menunggu pemeriksaan</p>
       </div>
 
       <div className="space-y-3">
@@ -31,7 +31,7 @@ export default function DokterAntrian() {
             <Card className={`border shadow-sm hover:shadow-md transition-all cursor-pointer ${
               patient.triageResult.priority === 'CRITICAL' ? 'border-red-200 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/20' :
               patient.triageResult.priority === 'HIGH' ? 'border-orange-200 dark:border-orange-900/50 bg-orange-50/30 dark:bg-orange-950/20' :
-              'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50'
+              'border-border bg-card'
             }`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
@@ -44,16 +44,16 @@ export default function DokterAntrian() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-slate-900">{patient.name}</h3>
-                      <span className="text-xs text-slate-500">{patient.age}th · {patient.gender === 'L' ? 'L' : 'P'}</span>
+                      <h3 className="font-semibold text-card-foreground">{patient.name}</h3>
+                      <span className="text-xs text-muted-foreground">{patient.age}th · {patient.gender === 'L' ? 'L' : 'P'}</span>
                       <Badge className={`text-xs ${
                         patient.triageResult.priority === 'CRITICAL' ? 'bg-red-600 text-white' :
                         patient.triageResult.priority === 'HIGH' ? 'bg-orange-500 text-white' :
                         patient.triageResult.priority === 'MEDIUM' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'
                       }`}>{patient.triageResult.priorityLabel}</Badge>
                     </div>
-                    <p className="text-sm text-slate-600 truncate">{patient.complaint}</p>
-                    <div className="flex gap-3 mt-1 text-xs text-slate-500">
+                    <p className="text-sm text-muted-foreground truncate">{patient.complaint}</p>
+                    <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
                       <span>BP: {patient.vitalSigns.bloodPressure}</span>
                       <span>HR: {patient.vitalSigns.heartRate}</span>
                       <span>SpO2: {patient.vitalSigns.oxygenSaturation}%</span>
@@ -68,8 +68,8 @@ export default function DokterAntrian() {
         {waitingPatients.length === 0 && (
           <div className="text-center py-20">
             <CircleCheckBig className="w-12 h-12 text-green-300 mx-auto mb-3" />
-            <p className="text-slate-500 font-medium">Semua pasien sudah ditangani</p>
-            <p className="text-sm text-slate-400 mt-1">Tidak ada pasien dalam antrian</p>
+            <p className="text-muted-foreground font-medium">Semua pasien sudah ditangani</p>
+            <p className="text-sm text-muted-foreground mt-1">Tidak ada pasien dalam antrian</p>
           </div>
         )}
       </div>

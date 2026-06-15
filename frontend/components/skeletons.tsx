@@ -7,7 +7,7 @@ function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)
   return (
     <div
       className={cn(
-        'animate-pulse rounded-lg bg-slate-200/70',
+        'animate-pulse rounded-lg bg-muted',
         className
       )}
       {...props}
@@ -18,7 +18,7 @@ function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)
 // ─── Card Skeleton ──────────────────────────────────────────
 function CardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('rounded-2xl border border-slate-100 bg-white p-5 shadow-sm space-y-4', className)}>
+    <div className={cn('rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4', className)}>
       <div className="flex items-center gap-3">
         <Skeleton className="h-10 w-10 rounded-xl" />
         <div className="space-y-2 flex-1">
@@ -34,7 +34,7 @@ function CardSkeleton({ className }: { className?: string }) {
 // ─── Stat Card Skeleton ─────────────────────────────────────
 function StatCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-center gap-3 mb-3">
         <Skeleton className="h-9 w-9 rounded-lg" />
         <Skeleton className="h-3 w-16" />
@@ -47,7 +47,7 @@ function StatCardSkeleton() {
 // ─── Table Row Skeleton ─────────────────────────────────────
 function TableRowSkeleton() {
   return (
-    <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-50">
+    <div className="flex items-center gap-4 p-3 rounded-xl bg-muted/50">
       <Skeleton className="h-10 w-10 rounded-lg" />
       <div className="flex-1 space-y-2">
         <Skeleton className="h-4 w-32" />
@@ -76,7 +76,7 @@ function DashboardSkeleton() {
       </div>
 
       {/* Content Card */}
-      <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-8 w-20 rounded-lg" />
@@ -94,7 +94,7 @@ function DashboardSkeleton() {
 // ─── Full Page Loading ──────────────────────────────────────
 function FullPageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
         <div className="relative w-16 h-16 mx-auto mb-4">
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 animate-pulse shadow-lg shadow-emerald-500/25" />
@@ -104,7 +104,7 @@ function FullPageLoader() {
             </svg>
           </div>
         </div>
-        <p className="text-slate-500 text-sm font-medium animate-pulse">Memuat...</p>
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">Memuat...</p>
       </div>
     </div>
   )

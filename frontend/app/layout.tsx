@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { QueueProvider } from "@/contexts/QueueContext";
+import { PatientProvider } from "@/contexts/PatientContext";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
 const geistSans = Geist({
@@ -29,14 +30,17 @@ export default function RootLayout({
     <html
       lang="id"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
-            <QueueProvider>
-              {children}
-            </QueueProvider>
+            <PatientProvider>
+              <QueueProvider>
+                {children}
+              </QueueProvider>
+            </PatientProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

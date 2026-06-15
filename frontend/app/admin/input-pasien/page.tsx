@@ -13,11 +13,13 @@ import { Separator } from '@/components/ui/separator'
 import { Toaster, toast } from 'sonner'
 import {
   User, Heart, Thermometer, Wind, HeartPulse, Clock, Pill, AlertTriangle,
-  ChevronRight, ChevronLeft, Send, RotateCcw, Check, Brain, CircleCheckBig
+  ChevronRight, ChevronLeft, Send, RotateCcw, Check, Brain, CircleCheckBig, Search
 } from 'lucide-react'
 import type { PatientData, QueuePatient } from '@/types'
 import { INITIAL_PATIENT_DATA, SYMPTOM_OPTIONS, MOCK_TRIAGE_RESULTS } from '@/data/mock'
 import { useQueue } from '@/contexts/QueueContext'
+import { usePatients } from '@/contexts/PatientContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SlideUp } from '@/components/motion'
 
@@ -31,6 +33,52 @@ export default function InputPasien() {
   const [lastAdded, setLastAdded] = useState<QueuePatient | null>(null)
 
   const totalSteps = 3
+
+  const { searchPatients, addRegisteredPatient } = usePatients()
+  const { register } = useAuth()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [mode, setMode] = useState<'search'|'add'>('search')
+  const [newPatient, setNewPatient] = useState({
+    name: '', dob: '', gender: 'L' as 'L'|'P', nik: '', bpjs: '', phone: '', address: '', email: '', password: ''
+  })
+
+  const calculateAge = (dob: string) => {
+    if (!dob) return 0;
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  const handleSelectPatient = (pt: any) => {
+    setPatient(prev => ({
+      ...prev,
+      name: pt.name, age: pt.age, gender: pt.gender, nik: pt.nik || '', phone: pt.phone, address: pt.address
+    }))
+    setStep(2)
+  }
+
+  const handleSubmitNewPatient = () => {
+    register(newPatient.name, newPatient.email, newPatient.password, 'pasien')
+    const added = addRegisteredPatient({
+      name: newPatient.name,
+      dob: newPatient.dob,
+      age: calculateAge(newPatient.dob),
+      gender: newPatient.gender,
+      nik: newPatient.nik,
+      bpjs: newPatient.bpjs,
+      phone: newPatient.phone,
+      address: newPatient.address,
+    })
+    toast.success('Pasien baru berhasil didaftarkan dan akun dibuat!')
+    setMode('search')
+    setSearchQuery(added.name)
+    setNewPatient({ name: '', dob: '', gender: 'L', nik: '', bpjs: '', phone: '', address: '', email: '', password: '' })
+  }
 
   const updatePatient = (field: keyof PatientData, value: unknown) => {
     setPatient(prev => ({ ...prev, [field]: value }))
@@ -98,6 +146,8 @@ export default function InputPasien() {
   const handleNewPatient = () => {
     setPatient({ ...INITIAL_PATIENT_DATA })
     setStep(1)
+    setMode('search')
+    setSearchQuery('')
     setShowResult(false)
     setLastAdded(null)
   }
@@ -105,7 +155,10 @@ export default function InputPasien() {
   const isStepValid = () => {
     switch (step) {
       case 1:
-        return patient.name && patient.age > 0 && patient.nik && patient.phone && patient.address
+        if (mode === 'add') {
+          return newPatient.name && newPatient.dob && newPatient.phone && newPatient.address && newPatient.email && newPatient.password
+        }
+        return false // Di mode pencarian, kita harus klik tombol pilih
       case 2:
         return patient.complaint && patient.symptoms.length > 0 && patient.duration
       case 3:
@@ -152,8 +205,8 @@ export default function InputPasien() {
           >
             <CircleCheckBig className="w-8 h-8 text-emerald-600" />
           </motion.div>
-          <h1 className="text-2xl font-bold text-slate-900">Pasien Berhasil Didaftarkan</h1>
-          <p className="text-sm text-slate-500 mt-1">Data telah dianalisis oleh AI dan masuk ke antrian</p>
+          <h1 className="text-2xl font-bold text-foreground">Pasien Berhasil Didaftarkan</h1>
+          <p className="text-sm text-muted-foreground mt-1">Data telah dianalisis oleh AI dan masuk ke antrian</p>
         </motion.div>
 
         <Card className={`border-2 ${cfg.bg}`}>
@@ -163,33 +216,33 @@ export default function InputPasien() {
                 {lastAdded.queueNumber}
               </div>
               <div>
-                <h2 className="text-lg font-bold text-slate-900">{lastAdded.name}</h2>
-                <p className="text-sm text-slate-500">{lastAdded.age} tahun · {lastAdded.gender === 'L' ? 'Laki-laki' : 'Perempuan'}</p>
+                <h2 className="text-lg font-bold text-card-foreground">{lastAdded.name}</h2>
+                <p className="text-sm text-muted-foreground">{lastAdded.age} tahun · {lastAdded.gender === 'L' ? 'Laki-laki' : 'Perempuan'}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className={`p-3 rounded-xl ${cfg.bg}`}>
-                <p className="text-xs text-slate-500 mb-1">Prioritas</p>
+                <p className="text-xs text-muted-foreground mb-1">Prioritas</p>
                 <p className={`font-bold ${cfg.text}`}>{lastAdded.triageResult.priorityLabel}</p>
               </div>
               <div className={`p-3 rounded-xl ${cfg.bg}`}>
-                <p className="text-xs text-slate-500 mb-1">Estimasi Tunggu</p>
-                <p className="font-bold text-slate-900">{lastAdded.triageResult.estimatedWaitTime}</p>
+                <p className="text-xs text-muted-foreground mb-1">Estimasi Tunggu</p>
+                <p className="font-bold text-card-foreground">{lastAdded.triageResult.estimatedWaitTime}</p>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+            <div className="bg-background rounded-xl p-4 border border-border">
               <div className="flex items-center gap-2 mb-2">
                 <Brain className="w-4 h-4 text-violet-600 dark:text-violet-500" />
-                <span className="text-sm font-semibold text-slate-900">AI Reasoning</span>
+                <span className="text-sm font-semibold text-foreground">AI Reasoning</span>
                 <Badge className="bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400 text-xs">
                   {(lastAdded.triageResult.confidence * 100).toFixed(0)}% confidence
                 </Badge>
               </div>
               <ul className="space-y-1">
                 {lastAdded.triageResult.reasoning.slice(0, 3).map((r, i) => (
-                  <li key={i} className="text-xs text-slate-600 flex items-start gap-2">
+                  <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
                     <span className="text-emerald-500 mt-0.5">•</span>
                     {r}
                   </li>
@@ -219,8 +272,8 @@ export default function InputPasien() {
 
       {/* Header */}
       <SlideUp className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Input Pasien Baru</h1>
-        <p className="text-sm text-slate-500">Masukkan data lengkap pasien untuk analisis AI triage</p>
+        <h1 className="text-2xl font-bold text-foreground">Input Pasien Baru</h1>
+        <p className="text-sm text-muted-foreground">Masukkan data lengkap pasien untuk analisis AI triage</p>
       </SlideUp>
 
       {/* Progress */}
@@ -231,17 +284,17 @@ export default function InputPasien() {
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                 step > i + 1 ? 'bg-blue-600 text-white' :
                 step === i + 1 ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-500' :
-                'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
+                'bg-muted text-muted-foreground'
               }`}>
                 {step > i + 1 ? <Check className="w-4 h-4" /> : i + 1}
               </div>
               <span className={`hidden sm:inline text-sm font-medium ${
-                step === i + 1 ? 'text-blue-700' : 'text-slate-500'
+                step === i + 1 ? 'text-blue-700 dark:text-blue-400' : 'text-muted-foreground'
               }`}>{label}</span>
             </div>
           ))}
         </div>
-        <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-blue-600 rounded-full"
             animate={{ width: `${(step / totalSteps) * 100}%` }}
@@ -250,59 +303,144 @@ export default function InputPasien() {
         </div>
       </div>
 
-      {/* Step 1: Personal Data */}
+      {/* Step 1: Search or Add Patient */}
       <AnimatePresence mode="wait">
-      {step === 1 && (
+      {step === 1 && mode === 'search' && (
         <motion.div
-          key="step-1"
+          key="step-1-search"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
         >
-        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5 text-blue-600" />
-              Data Pribadi Pasien
-            </CardTitle>
-            <CardDescription>Informasi identitas dan kontak pasien</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="grid md:grid-cols-2 gap-5">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nama Lengkap <span className="text-red-500">*</span></Label>
-                <Input id="name" value={patient.name} onChange={e => updatePatient('name', e.target.value)} placeholder="Nama lengkap pasien" className="h-11" />
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => setMode('add')} className="gap-2 bg-blue-600 hover:bg-blue-700">
+              <User className="w-4 h-4" /> Tambahkan Pasien Baru
+            </Button>
+          </div>
+          <Card className="border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="w-5 h-5 text-blue-600" />
+                Cari Pasien Terdaftar
+              </CardTitle>
+              <CardDescription>Cari pasien berdasarkan nama atau NIK</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <Input 
+                value={searchQuery} 
+                onChange={e => setSearchQuery(e.target.value)} 
+                placeholder="Ketik nama atau NIK pasien..." 
+                className="h-12 text-lg" 
+              />
+              <div className="space-y-3 mt-4">
+                {searchQuery.trim() === '' ? (
+                  <p className="text-center text-muted-foreground py-8 text-sm">Masukkan kata kunci pencarian</p>
+                ) : searchPatients(searchQuery).length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8 text-sm">Tidak ada pasien yang cocok.</p>
+                ) : (
+                  searchPatients(searchQuery).map(pt => (
+                    <div key={pt.id} className="flex items-center justify-between p-4 border border-border rounded-xl hover:border-blue-300 dark:hover:border-blue-800 transition-colors bg-card">
+                      <div>
+                        <h3 className="font-bold text-foreground">{pt.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {pt.age} thn · {pt.address}
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          {pt.nik && <Badge variant="outline" className="text-[10px]">NIK: {pt.nik}</Badge>}
+                          {pt.bpjs && <Badge variant="outline" className="text-[10px]">BPJS: {pt.bpjs}</Badge>}
+                          {pt.faskes && <Badge variant="secondary" className="text-[10px]">{pt.faskes}</Badge>}
+                        </div>
+                      </div>
+                      <Button onClick={() => handleSelectPatient(pt)} variant="outline" className="gap-2 shrink-0 border-blue-200 hover:bg-blue-50 text-blue-600 dark:border-blue-900 dark:hover:bg-blue-900/30">
+                        <Check className="w-4 h-4" /> Pilih
+                      </Button>
+                    </div>
+                  ))
+                )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="nik">NIK <span className="text-red-500">*</span></Label>
-                <Input id="nik" value={patient.nik} onChange={e => updatePatient('nik', e.target.value)} placeholder="Nomor Induk Kependudukan" maxLength={16} className="h-11" />
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {step === 1 && mode === 'add' && (
+        <motion.div
+          key="step-1-add"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <Button onClick={() => setMode('search')} variant="ghost" className="gap-2">
+              <ChevronLeft className="w-4 h-4" /> Kembali ke Pencarian
+            </Button>
+          </div>
+          <Card className="border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-600" />
+                Registrasi Pasien Baru
+              </CardTitle>
+              <CardDescription>Daftarkan pasien ke database RS Misal dan buatkan akun login</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <Label>Nama Lengkap <span className="text-red-500">*</span></Label>
+                  <Input value={newPatient.name} onChange={e => setNewPatient({...newPatient, name: e.target.value})} placeholder="Nama pasien" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tanggal Lahir <span className="text-red-500">*</span></Label>
+                  <Input type="date" value={newPatient.dob} onChange={e => setNewPatient({...newPatient, dob: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Usia (Otomatis)</Label>
+                  <Input disabled value={calculateAge(newPatient.dob) || ''} placeholder="Dihitung otomatis" className="bg-muted" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Jenis Kelamin <span className="text-red-500">*</span></Label>
+                  <Select value={newPatient.gender} onValueChange={v => setNewPatient({...newPatient, gender: v as 'L'|'P'})}>
+                    <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="L">Laki-laki</SelectItem>
+                      <SelectItem value="P">Perempuan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>NIK <span className="text-xs text-muted-foreground">(Opsional)</span></Label>
+                  <Input value={newPatient.nik} onChange={e => setNewPatient({...newPatient, nik: e.target.value})} placeholder="KTP" />
+                </div>
+                <div className="space-y-2">
+                  <Label>No. BPJS <span className="text-xs text-muted-foreground">(Opsional)</span></Label>
+                  <Input value={newPatient.bpjs} onChange={e => setNewPatient({...newPatient, bpjs: e.target.value})} placeholder="BPJS" />
+                </div>
+                <div className="space-y-2">
+                  <Label>No. Telepon <span className="text-red-500">*</span></Label>
+                  <Input value={newPatient.phone} onChange={e => setNewPatient({...newPatient, phone: e.target.value})} placeholder="08xxx" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Alamat Lengkap <span className="text-red-500">*</span></Label>
+                  <Textarea value={newPatient.address} onChange={e => setNewPatient({...newPatient, address: e.target.value})} placeholder="Alamat lengkap" rows={2} />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="age">Usia (tahun) <span className="text-red-500">*</span></Label>
-                <Input id="age" type="number" value={patient.age || ''} onChange={e => updatePatient('age', parseInt(e.target.value) || 0)} placeholder="Usia" className="h-11" />
+              
+              <Separator className="my-6" />
+              <h3 className="font-semibold text-sm mb-4">Informasi Akun Pasien (Untuk Login)</h3>
+              <div className="grid md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <Label>Email <span className="text-red-500">*</span></Label>
+                  <Input type="email" value={newPatient.email} onChange={e => setNewPatient({...newPatient, email: e.target.value})} placeholder="email@pasien.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Password Default <span className="text-red-500">*</span></Label>
+                  <Input value={newPatient.password} onChange={e => setNewPatient({...newPatient, password: e.target.value})} placeholder="password123" />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Jenis Kelamin <span className="text-red-500">*</span></Label>
-                <Select value={patient.gender} onValueChange={v => updatePatient('gender', v)}>
-                  <SelectTrigger className="h-11"><SelectValue placeholder="Pilih" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="L">Laki-laki</SelectItem>
-                    <SelectItem value="P">Perempuan</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">No. Telepon <span className="text-red-500">*</span></Label>
-                <Input id="phone" value={patient.phone} onChange={e => updatePatient('phone', e.target.value)} placeholder="08xxx" className="h-11" />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="address">Alamat <span className="text-red-500">*</span></Label>
-                <Textarea id="address" value={patient.address} onChange={e => updatePatient('address', e.target.value)} placeholder="Alamat lengkap" rows={2} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
         </motion.div>
       )}
 
@@ -315,7 +453,7 @@ export default function InputPasien() {
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
         >
-        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <HeartPulse className="w-5 h-5 text-blue-600" />
@@ -334,10 +472,10 @@ export default function InputPasien() {
                 {SYMPTOM_OPTIONS.map(sym => (
                   <button key={sym.value} type="button" onClick={() => toggleSymptom(sym.value)}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm border transition-all text-left ${
-                      patient.symptoms.includes(sym.value) ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-400' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
+                      patient.symptoms.includes(sym.value) ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-400' : 'bg-background border-input text-muted-foreground hover:border-accent'
                     }`}>
                     <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                      patient.symptoms.includes(sym.value) ? 'bg-blue-500 border-blue-500' : 'border-slate-300 dark:border-slate-600'
+                      patient.symptoms.includes(sym.value) ? 'bg-blue-500 border-blue-500' : 'border-input'
                     }`}>
                       {patient.symptoms.includes(sym.value) && <Check className="w-3 h-3 text-white" />}
                     </div>
@@ -385,7 +523,7 @@ export default function InputPasien() {
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
         >
-        <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-rose-500" />
@@ -434,10 +572,16 @@ export default function InputPasien() {
               <RotateCcw className="w-4 h-4" />Reset
             </Button>
           )}
-          {step < totalSteps ? (
+          {step < totalSteps && step !== 1 ? (
             <Button onClick={() => setStep(step + 1)} disabled={!isStepValid()} className="gap-2 bg-blue-600 hover:bg-blue-700">
               Lanjutkan<ChevronRight className="w-4 h-4" />
             </Button>
+          ) : step === 1 ? (
+            mode === 'add' && (
+              <Button onClick={handleSubmitNewPatient} disabled={!isStepValid()} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+                Simpan Pasien Baru<Check className="w-4 h-4" />
+              </Button>
+            )
           ) : (
             <Button onClick={handleSubmit} disabled={!isStepValid() || isSubmitting} className="gap-2 bg-blue-600 hover:bg-blue-700">
               {isSubmitting ? (
