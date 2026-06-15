@@ -82,7 +82,7 @@ export default function AuditTrail() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="space-y-6">
       {/* Hero with Blockchain BG */}
       <div className="relative rounded-2xl overflow-hidden mb-8">
         <img

@@ -1,4 +1,13 @@
 export type PriorityLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+export type UserRole = 'admin' | 'dokter' | 'farmasi'
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  password: string
+  role: UserRole
+}
 
 export interface VitalSigns {
   bloodPressure: string
@@ -34,6 +43,15 @@ export interface TriageResult {
   color: string
 }
 
+export interface Prescription {
+  id: string
+  medicationName: string
+  dosage: string
+  frequency: string
+  duration: string
+  notes?: string
+}
+
 export interface QueuePatient extends PatientData {
   queueNumber: string
   triageResult: TriageResult
@@ -41,6 +59,14 @@ export interface QueuePatient extends PatientData {
   status: 'WAITING' | 'IN_PROGRESS' | 'COMPLETED'
   blockchainHash?: string
   blockExplorerUrl?: string
+  // Doctor fields
+  doctorId?: string
+  doctorName?: string
+  diagnosis?: string
+  prescriptions?: Prescription[]
+  // Pharmacy fields
+  pharmacyStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED'
+  completedAt?: Date
 }
 
 export interface AuditRecord {
