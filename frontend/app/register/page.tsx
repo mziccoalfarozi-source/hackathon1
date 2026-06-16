@@ -1,66 +1,97 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { HeartPulse, Eye, EyeOff, UserPlus, ArrowLeft, Shield, Stethoscope, FlaskConical } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
-import type { UserRole } from '@/types'
-import { Toaster, toast } from 'sonner'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  HeartPulse,
+  Eye,
+  EyeOff,
+  UserPlus,
+  ArrowLeft,
+  Shield,
+  Stethoscope,
+  FlaskConical,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import type { UserRole } from "@/types";
+import { Toaster, toast } from "sonner";
+import { motion } from "framer-motion";
 
 export default function Register() {
-  const router = useRouter()
-  const { register, user } = useAuth()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [role, setRole] = useState<UserRole | ''>('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const { register, user } = useAuth();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<UserRole | "">("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
-      router.replace('/')
+      router.replace("/");
     }
-  }, [user, router])
+  }, [user, router]);
 
   if (user) {
-    return null
+    return null;
   }
 
   const roleOptions = [
-    { value: 'admin' as UserRole, label: 'Admin', desc: 'Pendaftaran & manajemen pasien', icon: Shield, color: 'text-blue-400' },
-    { value: 'dokter' as UserRole, label: 'Dokter', desc: 'Pemeriksaan & diagnosis pasien', icon: Stethoscope, color: 'text-emerald-400' },
-    { value: 'farmasi' as UserRole, label: 'Farmasi', desc: 'Penyediaan & penyerahan obat', icon: FlaskConical, color: 'text-violet-400' },
-  ]
+    {
+      value: "admin" as UserRole,
+      label: "Admin",
+      desc: "Pendaftaran & manajemen pasien",
+      icon: Shield,
+      color: "text-blue-400",
+    },
+    {
+      value: "dokter" as UserRole,
+      label: "Dokter",
+      desc: "Pemeriksaan & diagnosis pasien",
+      icon: Stethoscope,
+      color: "text-emerald-400",
+    },
+    {
+      value: "farmasi" as UserRole,
+      label: "Farmasi",
+      desc: "Penyediaan & penyerahan obat",
+      icon: FlaskConical,
+      color: "text-violet-400",
+    },
+  ];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!name || !email || !password || !role) {
-      toast.error('Mohon isi semua field')
-      return
+      toast.error("Mohon isi semua field");
+      return;
     }
     if (password.length < 6) {
-      toast.error('Password minimal 6 karakter')
-      return
+      toast.error("Password minimal 6 karakter");
+      return;
     }
-    setIsLoading(true)
-    setTimeout(() => {
-      const result = register(name, email, password, role)
-      if (result.success) {
-        toast.success('Registrasi berhasil! Silakan login.')
-        setTimeout(() => router.push('/login'), 1000)
-      } else {
-        toast.error(result.error || 'Registrasi gagal')
-      }
-      setIsLoading(false)
-    }, 500)
-  }
+    setIsLoading(true);
+    const result = await register(name, email, password, role);
+    if (result.success) {
+      toast.success("Registrasi berhasil! Silakan login.");
+      setTimeout(() => router.push("/login"), 1000);
+    } else {
+      toast.error(result.error || "Registrasi gagal");
+    }
+    setIsLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
@@ -70,12 +101,12 @@ export default function Register() {
         <motion.div
           className="absolute top-20 right-10 w-72 h-72 bg-violet-400/10 rounded-full blur-[100px]"
           animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute bottom-10 left-20 w-96 h-96 bg-emerald-400/10 rounded-full blur-[120px]"
           animate={{ scale: [1.2, 1, 1.2] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
 
@@ -85,7 +116,10 @@ export default function Register() {
         transition={{ duration: 0.5 }}
         className="relative w-full max-w-md"
       >
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+        >
           <ArrowLeft className="w-4 h-4" />
           Kembali ke Beranda
         </Link>
@@ -95,12 +129,19 @@ export default function Register() {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.2 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 20,
+                delay: 0.2,
+              }}
               className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-4 shadow-xl shadow-emerald-500/20"
             >
               <HeartPulse className="w-7 h-7 text-white" />
             </motion.div>
-            <CardTitle className="text-2xl font-bold text-card-foreground">Daftar Akun Baru</CardTitle>
+            <CardTitle className="text-2xl font-bold text-card-foreground">
+              Daftar Akun Baru
+            </CardTitle>
             <CardDescription className="text-muted-foreground">
               Buat akun untuk mengakses sistem RS Misal
             </CardDescription>
@@ -108,34 +149,46 @@ export default function Register() {
           <CardContent className="space-y-5 pt-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-muted-foreground text-sm">Nama Lengkap</Label>
+                <Label htmlFor="name" className="text-muted-foreground text-sm">
+                  Nama Lengkap
+                </Label>
                 <Input
                   id="name"
                   value={name}
-                  onChange={e => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value)}
                   placeholder="Nama Lengkap"
                   className="h-11 bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-emerald-500/20"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reg-email" className="text-muted-foreground text-sm">Email</Label>
+                <Label
+                  htmlFor="reg-email"
+                  className="text-muted-foreground text-sm"
+                >
+                  Email
+                </Label>
                 <Input
                   id="reg-email"
                   type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="nama@email.com"
                   className="h-11 bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-emerald-500/20"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reg-password" className="text-muted-foreground text-sm">Password</Label>
+                <Label
+                  htmlFor="reg-password"
+                  className="text-muted-foreground text-sm"
+                >
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="reg-password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="Minimal 6 karakter"
                     className="h-11 bg-background border-input text-foreground placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-emerald-500/20 pr-10"
                   />
@@ -144,16 +197,22 @@ export default function Register() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-muted-foreground text-sm">Role / Peran</Label>
+                <Label className="text-muted-foreground text-sm">
+                  Role / Peran
+                </Label>
                 <div className="grid grid-cols-3 gap-2">
-                  {roleOptions.map(opt => {
-                    const Icon = opt.icon
-                    const isSelected = role === opt.value
+                  {roleOptions.map((opt) => {
+                    const Icon = opt.icon;
+                    const isSelected = role === opt.value;
                     return (
                       <button
                         key={opt.value}
@@ -161,17 +220,23 @@ export default function Register() {
                         onClick={() => setRole(opt.value)}
                         className={`p-3 rounded-xl border text-center transition-all ${
                           isSelected
-                            ? 'bg-emerald-500/15 border-emerald-500/50 ring-1 ring-emerald-500/30'
-                            : 'bg-muted/50 border-border hover:bg-muted'
+                            ? "bg-emerald-500/15 border-emerald-500/50 ring-1 ring-emerald-500/30"
+                            : "bg-muted/50 border-border hover:bg-muted"
                         }`}
                       >
-                        <Icon className={`w-5 h-5 mx-auto mb-1.5 ${isSelected ? 'text-emerald-400' : 'text-slate-400'}`} />
-                        <span className={`block text-xs font-semibold ${isSelected ? 'text-emerald-300' : 'text-muted-foreground'}`}>
+                        <Icon
+                          className={`w-5 h-5 mx-auto mb-1.5 ${isSelected ? "text-emerald-400" : "text-slate-400"}`}
+                        />
+                        <span
+                          className={`block text-xs font-semibold ${isSelected ? "text-emerald-300" : "text-muted-foreground"}`}
+                        >
                           {opt.label}
                         </span>
-                        <span className="block text-[10px] text-muted-foreground mt-0.5 leading-tight">{opt.desc}</span>
+                        <span className="block text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                          {opt.desc}
+                        </span>
                       </button>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -193,8 +258,11 @@ export default function Register() {
 
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
-                Sudah punya akun?{' '}
-                <Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
+                Sudah punya akun?{" "}
+                <Link
+                  href="/login"
+                  className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                >
                   Masuk di sini
                 </Link>
               </p>
@@ -203,5 +271,5 @@ export default function Register() {
         </Card>
       </motion.div>
     </div>
-  )
+  );
 }

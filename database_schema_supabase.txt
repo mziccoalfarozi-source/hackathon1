@@ -1,0 +1,989 @@
+-- ================================================================
+--  RS MISAL — SUPABASE DATABASE SCHEMA
+--  AI-Powered Triage & Hospital Queue Management System
+-- ================================================================
+--  Dibuat berdasarkan analisis frontend:
+--  Next.js 15 | TypeScript | Supabase (PostgreSQL)
+--
+--  CARA PAKAI:
+--  1. Buka Supabase Dashboard → SQL Editor
+--  2. Paste seluruh isi file ini
+--  3. Klik "Run" (jalankan semua sekaligus)
+--
+--  URUTAN EKSEKUSI:
+--  Section 1  → Extensions
+--  Section 2  → ENUM Types
+--  Section 3  → Helper Functions
+--  Section 4  → Tables (9 tabel)
+--  Section 5  → Indexes
+--  Section 6  → Triggers
+--  Section 7  → Row Level Security (RLS)
+--  Section 8  → Views (helper query)
+--  Section 9  → Seed Data: Master Symptoms
+--  Section 10 → Seed Data: Default Users
+--  Section 11 → Seed Data: Default Patients
+-- ================================================================
+
+
+-- ================================================================
+-- SECTION 1: EXTENSIONS
+-- ================================================================
+
+-- UUID generation (gen_random_uuid sudah built-in di PostgreSQL 13+)
+-- uuid-ossp tetap diaktifkan sebagai fallback
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- pg_trgm: untuk full-text search nama pasien (ILIKE performa tinggi)
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+
+-- pgcrypto: untuk hashing password di sisi database (opsional)
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+
+-- ================================================================
+-- SECTION 2: CUSTOM ENUM TYPES
+-- ================================================================
+-- Enum types menjamin konsistensi nilai kolom di seluruh tabel.
+-- Ganti typo enum value = error di level database.
+
+-- Role pengguna sistem
+DO $$ BEGIN
+    CREATE TYPE user_role AS ENUM ('admin', 'dokter', 'farmasi', 'pasien');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Jenis kelamin
+DO $$ BEGIN
+    CREATE TYPE gender_type AS ENUM ('L', 'P');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Tingkat prioritas triage (sesuai AI output: CRITICAL > HIGH > MEDIUM > LOW)
+DO $$ BEGIN
+    CREATE TYPE priority_level AS ENUM ('CRITICAL', 'HIGH', 'MEDIUM', 'LOW');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Status kunjungan pasien dari pendaftaran sampai selesai diperiksa dokter
+DO $$ BEGIN
+    CREATE TYPE visit_status AS ENUM ('WAITING', 'IN_PROGRESS', 'COMPLETED');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Status farmasi: alur penyiapan obat setelah dokter input resep
+DO $$ BEGIN
+    CREATE TYPE pharmacy_status_type AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+
+-- ================================================================
+-- SECTION 3: HELPER FUNCTIONS
+-- ================================================================
+
+-- Fungsi trigger: otomatis update kolom updated_at setiap kali row diupdate
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- ================================================================
+-- SECTION 4: TABLE DEFINITIONS
+-- ================================================================
+
+-- ----------------------------------------------------------------
+-- TABLE: users
+-- Menyimpan semua akun pengguna sistem RS Misal.
+-- Roles: admin (staf pendaftaran), dokter, farmasi, pasien.
+-- Digunakan oleh: AuthContext.tsx
+-- localStorage key yang digantikan: 'rs_misal_users'
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.users (
+    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    name            VARCHAR(150) NOT NULL,
+    email           VARCHAR(255) NOT NULL,
+    password_hash   VARCHAR(255) NOT NULL,
+    -- PENTING: Selalu simpan bcrypt hash, BUKAN plain text password!
+    -- Gunakan: bcrypt.hash(password, 10) dari library bcryptjs di Node.js
+    role            user_role   NOT NULL DEFAULT 'pasien',
+    is_active       BOOLEAN     NOT NULL DEFAULT TRUE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT users_email_unique UNIQUE (email)
+);
+
+COMMENT ON TABLE  public.users                IS 'Akun pengguna sistem RS Misal. Menggantikan localStorage rs_misal_users.';
+COMMENT ON COLUMN public.users.password_hash  IS 'Bcrypt hash (rounds=10). JANGAN simpan plain text!';
+COMMENT ON COLUMN public.users.role           IS 'admin=staf pendaftaran IGD, dokter=pemeriksa, farmasi=staf apotek, pasien=pemilik rekam medis';
+COMMENT ON COLUMN public.users.is_active      IS 'FALSE = akun dinonaktifkan (soft delete), tidak bisa login';
+
+
+-- ----------------------------------------------------------------
+-- TABLE: patients
+-- Master data pasien / Rekam Medis.
+-- Satu pasien = satu baris, bisa punya banyak kunjungan (visits).
+-- Digunakan oleh: PatientContext.tsx, admin/input-pasien
+-- localStorage key yang digantikan: 'rs_misal_registered_patients'
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.patients (
+    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID        REFERENCES public.users(id) ON DELETE SET NULL,
+    -- NULL = pasien belum/tidak punya akun login di sistem ini
+    -- Contoh: bayi, lansia, atau pasien walk-in tanpa registrasi online
+    name            VARCHAR(150) NOT NULL,
+    date_of_birth   DATE,
+    age             INT,
+    -- age di-cache di sini untuk efisiensi query; dihitung dari date_of_birth
+    -- sync dengan fungsi calculateAge() di admin/input-pasien/page.tsx
+    gender          gender_type NOT NULL,
+    nik             VARCHAR(16),
+    -- NIK 16 digit KTP. NULL untuk pasien anonim atau anak di bawah umur
+    bpjs_number     VARCHAR(20),
+    -- Nomor BPJS Kesehatan. NULL jika tidak peserta BPJS
+    phone           VARCHAR(20) NOT NULL,
+    address         TEXT        NOT NULL,
+    faskes          VARCHAR(200),
+    -- Fasilitas Kesehatan Tingkat 1 (FKTP/Puskesmas) terdaftar BPJS
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT patients_nik_unique UNIQUE (nik),
+    CONSTRAINT patients_age_positive CHECK (age IS NULL OR age >= 0)
+);
+
+COMMENT ON TABLE  public.patients              IS 'Master data pasien (Rekam Medis). Menggantikan localStorage rs_misal_registered_patients.';
+COMMENT ON COLUMN public.patients.user_id      IS 'Link ke akun login pasien. NULL jika pasien belum punya akun.';
+COMMENT ON COLUMN public.patients.nik          IS 'NIK 16 digit. UNIQUE, tapi boleh NULL untuk pasien anonim.';
+COMMENT ON COLUMN public.patients.age          IS 'Umur dalam tahun, di-cache dari date_of_birth. Update saat data diperbarui.';
+COMMENT ON COLUMN public.patients.faskes       IS 'FKTP/Puskesmas rujukan BPJS. Contoh: Tingkat 1 - Klinik Sehat Bersama';
+
+
+-- ----------------------------------------------------------------
+-- TABLE: visits
+-- Setiap kunjungan/registrasi pasien ke IGD atau poli.
+-- 1 pasien bisa punya banyak kunjungan (riwayat medis).
+-- Ini adalah tabel PUSAT yang menghubungkan semua entitas lain.
+-- Digunakan oleh: QueueContext.tsx, semua dashboard
+-- localStorage key yang digantikan: 'rs_misal_queue'
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.visits (
+    id                      UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id              UUID            NOT NULL REFERENCES public.patients(id) ON DELETE RESTRICT,
+    -- RESTRICT: tidak bisa hapus pasien jika masih ada kunjungan aktif
+    doctor_id               UUID            REFERENCES public.users(id) ON DELETE SET NULL,
+    -- Dokter yang menangani. Diisi saat dokter ambil pasien dari antrian.
+    queue_number            VARCHAR(10)     NOT NULL,
+    -- Format: [Prefix]-[NomorUrut]. A = prioritas tinggi (CRITICAL/HIGH), B = reguler
+    -- Contoh: A-001, B-023. Prefix ditentukan berdasarkan hasil triage.
+    complaint               TEXT            NOT NULL,
+    -- Keluhan utama yang disampaikan pasien/keluarga saat registrasi
+    duration_of_symptoms    VARCHAR(100),
+    -- Sudah berapa lama gejala dirasakan. Contoh: "30 menit", "3 hari"
+    allergies               TEXT,
+    -- Riwayat alergi obat atau makanan
+    current_medications     TEXT,
+    -- Obat yang sedang dikonsumsi secara rutin sebelum kunjungan ini
+    status                  visit_status    NOT NULL DEFAULT 'WAITING',
+    -- Alur: WAITING → IN_PROGRESS (saat dokter mulai periksa) → COMPLETED
+    doctor_notes            TEXT,
+    -- Catatan tambahan dokter (anamnesis, pemeriksaan fisik, dll)
+    diagnosis               TEXT,
+    -- Diagnosis akhir dokter. Diisi di halaman /dokter/periksa/[id]
+    blockchain_hash         VARCHAR(100),
+    -- Transaction hash di blockchain setelah triage dikonfirmasi
+    -- Format: 0x + 64 hex characters
+    block_explorer_url      TEXT,
+    -- URL lengkap ke block explorer. Contoh: https://polygonscan.com/tx/0x...
+    pharmacy_status         pharmacy_status_type,
+    -- NULL = belum ada resep dari dokter
+    -- PENDING = resep sudah dibuat, menunggu farmasi
+    -- PROCESSING = farmasi sedang menyiapkan obat
+    -- COMPLETED = obat sudah diserahkan ke pasien
+    completed_at            TIMESTAMPTZ,
+    -- Timestamp ketika dokter menyelesaikan pemeriksaan (set status = COMPLETED)
+    pharmacy_completed_at   TIMESTAMPTZ,
+    -- Timestamp ketika farmasi menyerahkan obat ke pasien
+    created_at              TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+    -- Timestamp registrasi/masuk antrian
+);
+
+COMMENT ON TABLE  public.visits                       IS 'Setiap kunjungan pasien. Tabel pusat yang menghubungkan pasien, dokter, triage, resep, dan audit.';
+COMMENT ON COLUMN public.visits.queue_number          IS 'Nomor antrian. A=prioritas tinggi (CRITICAL/HIGH), B=reguler (MEDIUM/LOW). Format: A-001';
+COMMENT ON COLUMN public.visits.status                IS 'WAITING=menunggu giliran, IN_PROGRESS=sedang diperiksa dokter, COMPLETED=selesai';
+COMMENT ON COLUMN public.visits.pharmacy_status       IS 'NULL=belum ada resep; PENDING=menunggu farmasi; PROCESSING=sedang disiapkan; COMPLETED=obat diserahkan';
+COMMENT ON COLUMN public.visits.blockchain_hash       IS 'Tx hash bukti integritas di blockchain (Polygon). Format: 0x + 64 hex chars.';
+
+
+-- ----------------------------------------------------------------
+-- TABLE: vital_signs
+-- Tanda-tanda vital pasien saat kunjungan.
+-- Relasi 1:1 dengan visits (satu kunjungan = satu set vital signs).
+-- Input oleh: admin/staf saat pendaftaran, step 2 di input-pasien
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.vital_signs (
+    id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    visit_id            UUID        NOT NULL REFERENCES public.visits(id) ON DELETE CASCADE,
+    -- CASCADE: hapus vital signs jika kunjungan dihapus
+    blood_pressure      VARCHAR(10),
+    -- Format: "sistolik/diastolik" dalam mmHg. Contoh: "120/80", "90/60"
+    heart_rate          INT,
+    -- Denyut jantung per menit (bpm). Normal: 60-100 bpm
+    temperature         DECIMAL(4,1),
+    -- Suhu tubuh dalam Celsius. Contoh: 37.5, 39.5. Normal: 36.1-37.2°C
+    oxygen_saturation   INT,
+    -- Saturasi oksigen SpO2 dalam persen. Normal: 95-100%
+    respiratory_rate    INT,
+    -- Frekuensi napas per menit (RR). Normal dewasa: 12-20 napas/menit
+    recorded_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT vital_signs_visit_unique UNIQUE (visit_id),
+    -- Satu kunjungan hanya boleh punya SATU set vital signs
+    CONSTRAINT vital_signs_hr_range CHECK (heart_rate IS NULL OR (heart_rate >= 0 AND heart_rate <= 300)),
+    CONSTRAINT vital_signs_temp_range CHECK (temperature IS NULL OR (temperature >= 30 AND temperature <= 45)),
+    CONSTRAINT vital_signs_spo2_range CHECK (oxygen_saturation IS NULL OR (oxygen_saturation >= 0 AND oxygen_saturation <= 100)),
+    CONSTRAINT vital_signs_rr_range CHECK (respiratory_rate IS NULL OR (respiratory_rate >= 0 AND respiratory_rate <= 100))
+);
+
+COMMENT ON TABLE  public.vital_signs                    IS 'Tanda-tanda vital pasien saat kunjungan. Relasi 1:1 dengan visits.';
+COMMENT ON COLUMN public.vital_signs.blood_pressure     IS 'Tekanan darah format sistolik/diastolik. Contoh: 120/80 (mmHg)';
+COMMENT ON COLUMN public.vital_signs.heart_rate         IS 'Denyut jantung per menit. Normal: 60-100 bpm.';
+COMMENT ON COLUMN public.vital_signs.temperature        IS 'Suhu tubuh Celsius. Normal: 36.1-37.2°C. Demam: >37.5°C.';
+COMMENT ON COLUMN public.vital_signs.oxygen_saturation  IS 'SpO2 dalam persen. Normal: 95-100%. Kritis: <90%.';
+COMMENT ON COLUMN public.vital_signs.respiratory_rate   IS 'Napas per menit. Normal dewasa: 12-20. Takipnea: >20.';
+
+
+-- ----------------------------------------------------------------
+-- TABLE: triage_results
+-- Hasil analisis triage oleh AI (XGBoost model) per kunjungan.
+-- Relasi 1:1 dengan visits.
+-- Digunakan oleh: ai-engine/main.py → frontend hasil triage
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.triage_results (
+    id                  UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    visit_id            UUID            NOT NULL REFERENCES public.visits(id) ON DELETE CASCADE,
+    confirmed_by        UUID            REFERENCES public.users(id) ON DELETE SET NULL,
+    -- Dokter atau admin yang mengkonfirmasi hasil triage AI
+    priority            priority_level  NOT NULL,
+    priority_label      VARCHAR(20)     NOT NULL,
+    -- Label bahasa Indonesia: 'KRITIS', 'TINGGI', 'SEDANG', 'RENDAH'
+    confidence          DECIMAL(5,4)    NOT NULL,
+    -- Tingkat kepercayaan AI. Range: 0.0000 - 1.0000. Contoh: 0.9400 = 94%
+    reasoning           JSONB           NOT NULL DEFAULT '[]'::jsonb,
+    -- Array JSON berisi alasan-alasan AI dalam bahasa Indonesia
+    -- Contoh: ["Tekanan darah 90/60 menunjukkan hipotensi", "SpO2 88% menunjukkan hipoksia"]
+    recommended_action  TEXT            NOT NULL,
+    -- Tindakan yang direkomendasikan AI berdasarkan prioritas
+    estimated_wait_time VARCHAR(50)     NOT NULL,
+    -- Estimasi waktu tunggu. Contoh: "SEGERA (0 menit)", "< 10 menit", "30-60 menit"
+    ai_model_version    VARCHAR(50),
+    -- Versi model AI yang digunakan. Contoh: "xgboost_triage_v1.0"
+    -- Penting untuk audit ilmiah dan reproducibility
+    created_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT triage_results_visit_unique UNIQUE (visit_id),
+    CONSTRAINT triage_confidence_range CHECK (confidence >= 0 AND confidence <= 1)
+);
+
+COMMENT ON TABLE  public.triage_results                   IS 'Hasil analisis triage AI (XGBoost) per kunjungan. Dikonfirmasi dokter/admin lalu dicatat ke blockchain.';
+COMMENT ON COLUMN public.triage_results.confidence        IS 'Skor kepercayaan model AI (0.0-1.0). Contoh: 0.94 = 94% confidence.';
+COMMENT ON COLUMN public.triage_results.reasoning         IS 'Array JSON alasan AI. Contoh: ["Tekanan darah 90/60 menunjukkan hipotensi"]';
+COMMENT ON COLUMN public.triage_results.confirmed_by      IS 'UUID admin/dokter yang mengkonfirmasi hasil triage sebelum pasien masuk antrian.';
+COMMENT ON COLUMN public.triage_results.ai_model_version  IS 'Versi model AI untuk keperluan audit ilmiah. Contoh: xgboost_triage_v1.0';
+
+
+-- ----------------------------------------------------------------
+-- TABLE: symptoms
+-- Master daftar gejala yang tersedia di form pendaftaran.
+-- Sumber: SYMPTOM_OPTIONS di frontend/data/mock.ts
+-- Lookup table, jarang berubah.
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.symptoms (
+    code        VARCHAR(50)     PRIMARY KEY,
+    -- Kode unik snake_case. Contoh: 'nyeri_dada', 'sesak_napas'
+    -- Harus konsisten dengan value di SYMPTOM_OPTIONS frontend
+    label       VARCHAR(100)    NOT NULL,
+    -- Label tampilan bahasa Indonesia. Contoh: 'Nyeri Dada', 'Sesak Napas'
+    icon        VARCHAR(50),
+    -- Nama icon dari library Lucide React. Contoh: 'Heart', 'Wind', 'Thermometer'
+    sort_order  INT             NOT NULL DEFAULT 0
+    -- Urutan tampil di UI form pendaftaran (ascending)
+);
+
+COMMENT ON TABLE  public.symptoms            IS 'Master daftar gejala untuk form pendaftaran. Sumber: SYMPTOM_OPTIONS di mock.ts.';
+COMMENT ON COLUMN public.symptoms.code       IS 'Kode unik snake_case. Harus sync dengan value di SYMPTOM_OPTIONS frontend.';
+COMMENT ON COLUMN public.symptoms.icon       IS 'Nama icon Lucide React. Digunakan oleh komponen SymptomPicker di frontend.';
+COMMENT ON COLUMN public.symptoms.sort_order IS 'Urutan tampil ascending di UI. Gejala serius umumnya di urutan awal.';
+
+
+-- ----------------------------------------------------------------
+-- TABLE: visit_symptoms
+-- Junction table many-to-many: gejala yang dipilih per kunjungan.
+-- Sumber: field symptoms[] di QueuePatient type
+-- 1 kunjungan bisa punya banyak gejala; 1 gejala bisa ada di banyak kunjungan.
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.visit_symptoms (
+    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    visit_id        UUID        NOT NULL REFERENCES public.visits(id) ON DELETE CASCADE,
+    symptom_code    VARCHAR(50) NOT NULL REFERENCES public.symptoms(code) ON DELETE RESTRICT,
+    -- RESTRICT: tidak bisa hapus master gejala jika masih dipakai di kunjungan
+
+    CONSTRAINT visit_symptoms_unique UNIQUE (visit_id, symptom_code)
+    -- Satu gejala tidak boleh duplikat dalam satu kunjungan
+);
+
+COMMENT ON TABLE public.visit_symptoms IS 'Junction table gejala per kunjungan. Menggantikan array symptoms[] di QueuePatient.';
+
+
+-- ----------------------------------------------------------------
+-- TABLE: prescriptions
+-- Resep obat yang diberikan dokter per kunjungan.
+-- 1 kunjungan bisa punya beberapa resep obat.
+-- Digunakan oleh: dokter/periksa/[id], farmasi dashboard
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.prescriptions (
+    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    visit_id        UUID        NOT NULL REFERENCES public.visits(id) ON DELETE CASCADE,
+    medication_name VARCHAR(150) NOT NULL,
+    -- Nama obat generik atau nama merek. Contoh: 'Paracetamol', 'Amlodipine'
+    dosage          VARCHAR(50) NOT NULL,
+    -- Dosis per kali minum. Contoh: '500mg', '5mg', '1 kapsul'
+    frequency       VARCHAR(100) NOT NULL,
+    -- Aturan minum. Contoh: '3x sehari', '1x sehari pagi hari sesudah makan'
+    duration        VARCHAR(50) NOT NULL,
+    -- Lama pengobatan. Contoh: '5 hari', '30 hari', 'sesuai kebutuhan'
+    notes           TEXT,
+    -- Catatan tambahan dokter. Contoh: 'Habiskan', 'Jangan dengan susu', dll
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE  public.prescriptions                IS 'Resep obat dari dokter per kunjungan. Ditampilkan di dashboard farmasi.';
+COMMENT ON COLUMN public.prescriptions.medication_name IS 'Nama obat generik atau merek dagang.';
+COMMENT ON COLUMN public.prescriptions.frequency       IS 'Frekuensi minum. Contoh: 3x sehari, 2x sehari malam hari.';
+COMMENT ON COLUMN public.prescriptions.notes           IS 'Instruksi khusus. Contoh: Habiskan!, Sesudah makan, Hindari menyetir.';
+
+
+-- ----------------------------------------------------------------
+-- TABLE: audit_records
+-- Audit trail immutable yang disinkronkan dengan blockchain.
+-- TIDAK BOLEH diedit atau dihapus setelah dibuat!
+-- Digunakan oleh: admin/audit, AUDIT_RECORDS di mock.ts
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.audit_records (
+    id              UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    visit_id        UUID            REFERENCES public.visits(id) ON DELETE SET NULL,
+    -- SET NULL: audit record TETAP ADA walaupun kunjungan dihapus
+    -- Ini penting! Audit harus immutable.
+    patient_name    VARCHAR(150)    NOT NULL,
+    -- SENGAJA di-denormalize dari patients.name
+    -- Tujuan: audit record harus tetap akurat meski nama pasien berubah
+    action          VARCHAR(100)    NOT NULL,
+    -- Jenis aksi yang diaudit. Contoh:
+    -- 'AI TRIAGE + KONFIRMASI', 'DIAGNOSIS ADDED', 'PRESCRIPTION CREATED',
+    -- 'PHARMACY COMPLETED', 'VISIT COMPLETED'
+    triage_priority priority_level  NOT NULL,
+    tx_hash         VARCHAR(100)    NOT NULL,
+    -- Transaction hash di blockchain. Format: 0x + 64 hex chars
+    block_number    BIGINT          NOT NULL,
+    -- Nomor blok di blockchain saat transaksi dikonfirmasi
+    is_verified     BOOLEAN         NOT NULL DEFAULT FALSE,
+    -- TRUE = tx_hash sudah dikonfirmasi valid di blockchain explorer
+    details         TEXT            NOT NULL,
+    -- Detail audit lengkap. Contoh:
+    -- 'Triage: KRITIS (ACS/Chest Pain) | Confirmed by: dr. Ahmad Fauzi | AI: 94%'
+    created_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+    -- Timestamp immutable, tidak boleh diubah
+);
+
+COMMENT ON TABLE  public.audit_records               IS 'Audit trail immutable yang sync dengan blockchain. DILARANG UPDATE/DELETE setelah insert!';
+COMMENT ON COLUMN public.audit_records.patient_name  IS 'Sengaja denormalized. Audit harus tetap terbaca meski data pasien berubah/dihapus.';
+COMMENT ON COLUMN public.audit_records.tx_hash       IS 'Transaction hash blockchain sebagai bukti integritas data yang tidak bisa dipalsukan.';
+COMMENT ON COLUMN public.audit_records.is_verified   IS 'Tandai TRUE setelah verifikasi tx_hash via RPC call ke blockchain node.';
+COMMENT ON COLUMN public.audit_records.details       IS 'Log teks lengkap. Contoh: Triage: KRITIS | Confirmed by: dr. Ahmad | AI Confidence: 94%';
+
+
+-- ================================================================
+-- SECTION 5: INDEXES
+-- Indexes mempercepat query yang sering dipakai dashboard frontend.
+-- ================================================================
+
+-- ----- users -----
+CREATE INDEX IF NOT EXISTS idx_users_email
+    ON public.users(email);
+    -- Query: login by email
+
+CREATE INDEX IF NOT EXISTS idx_users_role
+    ON public.users(role);
+    -- Query: filter admin/dokter/farmasi untuk dropdown
+
+-- ----- patients -----
+CREATE INDEX IF NOT EXISTS idx_patients_user_id
+    ON public.patients(user_id);
+    -- Query: cari data pasien berdasarkan akun login
+
+CREATE INDEX IF NOT EXISTS idx_patients_nik
+    ON public.patients(nik)
+    WHERE nik IS NOT NULL;
+    -- Query: cari pasien by NIK (partial index, skip NULL)
+
+CREATE INDEX IF NOT EXISTS idx_patients_name_trgm
+    ON public.patients USING GIN (name gin_trgm_ops);
+    -- Query: full-text search nama pasien (ILIKE '%budi%')
+    -- Digunakan oleh fungsi searchPatients() di PatientContext
+
+-- ----- visits -----
+CREATE INDEX IF NOT EXISTS idx_visits_patient_id
+    ON public.visits(patient_id);
+    -- Query: riwayat kunjungan milik satu pasien
+
+CREATE INDEX IF NOT EXISTS idx_visits_doctor_id
+    ON public.visits(doctor_id)
+    WHERE doctor_id IS NOT NULL;
+    -- Query: daftar pasien yang ditangani dokter tertentu
+
+CREATE INDEX IF NOT EXISTS idx_visits_status
+    ON public.visits(status);
+    -- Query: filter antrian WAITING/IN_PROGRESS/COMPLETED
+
+CREATE INDEX IF NOT EXISTS idx_visits_pharmacy_status
+    ON public.visits(pharmacy_status)
+    WHERE pharmacy_status IS NOT NULL;
+    -- Query: dashboard farmasi filter PENDING/PROCESSING/COMPLETED
+
+CREATE INDEX IF NOT EXISTS idx_visits_created_at
+    ON public.visits(created_at DESC);
+    -- Query: daftar kunjungan terbaru (sort by timestamp)
+
+CREATE INDEX IF NOT EXISTS idx_visits_queue_number
+    ON public.visits(queue_number);
+    -- Query: cari kunjungan by nomor antrian
+
+-- ----- vital_signs -----
+CREATE INDEX IF NOT EXISTS idx_vital_signs_visit_id
+    ON public.vital_signs(visit_id);
+
+-- ----- triage_results -----
+CREATE INDEX IF NOT EXISTS idx_triage_results_visit_id
+    ON public.triage_results(visit_id);
+
+CREATE INDEX IF NOT EXISTS idx_triage_results_priority
+    ON public.triage_results(priority);
+    -- Query: filter/sort antrian berdasarkan prioritas triage
+
+-- ----- visit_symptoms -----
+CREATE INDEX IF NOT EXISTS idx_visit_symptoms_visit_id
+    ON public.visit_symptoms(visit_id);
+    -- Query: ambil semua gejala untuk satu kunjungan
+
+CREATE INDEX IF NOT EXISTS idx_visit_symptoms_symptom_code
+    ON public.visit_symptoms(symptom_code);
+    -- Query: statistik gejala paling sering muncul
+
+-- ----- prescriptions -----
+CREATE INDEX IF NOT EXISTS idx_prescriptions_visit_id
+    ON public.prescriptions(visit_id);
+    -- Query: ambil semua resep untuk satu kunjungan (farmasi)
+
+-- ----- audit_records -----
+CREATE INDEX IF NOT EXISTS idx_audit_records_visit_id
+    ON public.audit_records(visit_id)
+    WHERE visit_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_audit_records_tx_hash
+    ON public.audit_records(tx_hash);
+    -- Query: verifikasi audit record by tx hash
+
+CREATE INDEX IF NOT EXISTS idx_audit_records_created_at
+    ON public.audit_records(created_at DESC);
+    -- Query: tampilkan audit trail terbaru di dashboard admin
+
+
+-- ================================================================
+-- SECTION 6: TRIGGERS
+-- ================================================================
+
+-- Auto-update updated_at pada tabel users
+DROP TRIGGER IF EXISTS trigger_users_updated_at ON public.users;
+CREATE TRIGGER trigger_users_updated_at
+    BEFORE UPDATE ON public.users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Auto-update updated_at pada tabel patients
+DROP TRIGGER IF EXISTS trigger_patients_updated_at ON public.patients;
+CREATE TRIGGER trigger_patients_updated_at
+    BEFORE UPDATE ON public.patients
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+
+-- ================================================================
+-- SECTION 7: ROW LEVEL SECURITY (RLS)
+-- RLS mengontrol siapa yang bisa baca/tulis data di Supabase.
+--
+-- CATATAN PENTING:
+-- Policy di bawah bersifat PERMISIF untuk kemudahan development.
+-- Sesuaikan dengan auth strategy pilihan:
+--   A) Supabase Auth bawaan → gunakan auth.uid() dan metadata role
+--   B) Custom JWT → decode role dari JWT di RLS function
+--
+-- Untuk production: pertimbangkan policy yang lebih ketat per role.
+-- ================================================================
+
+-- Aktifkan RLS pada semua tabel
+ALTER TABLE public.users         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.patients      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.visits        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vital_signs   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.triage_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.symptoms      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.visit_symptoms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.prescriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_records ENABLE ROW LEVEL SECURITY;
+
+-- ---- users ----
+-- Hanya bisa dibaca oleh user terautentikasi (tidak ekspos password_hash ke anon)
+CREATE POLICY "users_select_authenticated"
+    ON public.users FOR SELECT
+    USING (auth.role() = 'authenticated');
+
+CREATE POLICY "users_insert_service"
+    ON public.users FOR INSERT
+    WITH CHECK (auth.role() = 'service_role');
+    -- Hanya backend service (bukan browser langsung) yang bisa insert user baru
+
+CREATE POLICY "users_update_service"
+    ON public.users FOR UPDATE
+    USING (auth.role() = 'service_role');
+
+-- ---- patients ----
+-- Semua staff terautentikasi bisa baca dan kelola data pasien
+CREATE POLICY "patients_select_authenticated"
+    ON public.patients FOR SELECT
+    USING (auth.role() = 'authenticated');
+
+CREATE POLICY "patients_insert_authenticated"
+    ON public.patients FOR INSERT
+    WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "patients_update_authenticated"
+    ON public.patients FOR UPDATE
+    USING (auth.role() = 'authenticated');
+
+-- ---- visits ----
+-- Semua staff terautentikasi bisa kelola kunjungan
+CREATE POLICY "visits_all_authenticated"
+    ON public.visits FOR ALL
+    USING (auth.role() = 'authenticated');
+
+-- ---- vital_signs ----
+CREATE POLICY "vital_signs_all_authenticated"
+    ON public.vital_signs FOR ALL
+    USING (auth.role() = 'authenticated');
+
+-- ---- triage_results ----
+CREATE POLICY "triage_results_all_authenticated"
+    ON public.triage_results FOR ALL
+    USING (auth.role() = 'authenticated');
+
+-- ---- symptoms ----
+-- Gejala bisa dibaca siapa saja (termasuk publik/anon untuk form antrian)
+CREATE POLICY "symptoms_select_public"
+    ON public.symptoms FOR SELECT
+    USING (true);
+
+CREATE POLICY "symptoms_insert_service"
+    ON public.symptoms FOR INSERT
+    WITH CHECK (auth.role() = 'service_role');
+
+-- ---- visit_symptoms ----
+CREATE POLICY "visit_symptoms_all_authenticated"
+    ON public.visit_symptoms FOR ALL
+    USING (auth.role() = 'authenticated');
+
+-- ---- prescriptions ----
+CREATE POLICY "prescriptions_all_authenticated"
+    ON public.prescriptions FOR ALL
+    USING (auth.role() = 'authenticated');
+
+-- ---- audit_records ----
+-- Audit: siapa saja bisa baca; insert hanya authenticated; UPDATE/DELETE DILARANG
+CREATE POLICY "audit_records_select_authenticated"
+    ON public.audit_records FOR SELECT
+    USING (auth.role() = 'authenticated');
+
+CREATE POLICY "audit_records_insert_authenticated"
+    ON public.audit_records FOR INSERT
+    WITH CHECK (auth.role() = 'authenticated');
+    -- TIDAK ada policy untuk UPDATE dan DELETE → operasi ini akan selalu gagal
+
+
+-- ================================================================
+-- SECTION 8: VIEWS (Helper Query untuk Frontend)
+-- Views mempermudah query kompleks yang sering digunakan.
+-- ================================================================
+
+-- View: v_queue_full
+-- Antrian lengkap dengan info pasien + triage result (untuk semua dashboard)
+-- Menggantikan QueuePatient type yang berisi data gabungan
+CREATE OR REPLACE VIEW public.v_queue_full AS
+SELECT
+    v.id                    AS visit_id,
+    v.queue_number,
+    v.status,
+    v.complaint,
+    v.duration_of_symptoms,
+    v.allergies,
+    v.current_medications,
+    v.diagnosis,
+    v.pharmacy_status,
+    v.blockchain_hash,
+    v.block_explorer_url,
+    v.completed_at,
+    v.pharmacy_completed_at,
+    v.created_at            AS registered_at,
+
+    -- Data Pasien
+    p.id                    AS patient_id,
+    p.name                  AS patient_name,
+    p.age                   AS patient_age,
+    p.gender                AS patient_gender,
+    p.nik                   AS patient_nik,
+    p.phone                 AS patient_phone,
+    p.address               AS patient_address,
+    p.bpjs_number,
+
+    -- Data Dokter
+    v.doctor_id,
+    u_doc.name              AS doctor_name,
+
+    -- Vital Signs
+    vs.blood_pressure,
+    vs.heart_rate,
+    vs.temperature,
+    vs.oxygen_saturation,
+    vs.respiratory_rate,
+
+    -- Triage Result
+    tr.priority             AS triage_priority,
+    tr.priority_label       AS triage_priority_label,
+    tr.confidence           AS triage_confidence,
+    tr.reasoning            AS triage_reasoning,
+    tr.recommended_action   AS triage_recommended_action,
+    tr.estimated_wait_time  AS triage_estimated_wait_time,
+
+    -- Gejala (sebagai array)
+    COALESCE(
+        (SELECT ARRAY_AGG(sym.symptom_code ORDER BY sym.symptom_code)
+         FROM public.visit_symptoms sym
+         WHERE sym.visit_id = v.id),
+        ARRAY[]::VARCHAR[]
+    ) AS symptoms
+
+FROM public.visits v
+JOIN  public.patients p        ON p.id = v.patient_id
+LEFT JOIN public.users u_doc   ON u_doc.id = v.doctor_id
+LEFT JOIN public.vital_signs vs ON vs.visit_id = v.id
+LEFT JOIN public.triage_results tr ON tr.visit_id = v.id;
+
+COMMENT ON VIEW public.v_queue_full IS
+    'Antrian lengkap dengan info pasien, vital signs, dan triage. Digunakan oleh semua dashboard.';
+
+
+-- View: v_pharmacy_queue
+-- Antrian farmasi: kunjungan yang sudah ada resep (pharmacy_status IS NOT NULL)
+-- Menggantikan filter getPatientsForPharmacy() di QueueContext
+CREATE OR REPLACE VIEW public.v_pharmacy_queue AS
+SELECT
+    v.id                AS visit_id,
+    v.queue_number,
+    v.pharmacy_status,
+    v.diagnosis,
+    v.pharmacy_completed_at,
+    p.name              AS patient_name,
+    p.age               AS patient_age,
+    p.gender            AS patient_gender,
+    u_doc.name          AS doctor_name,
+    tr.priority         AS triage_priority,
+
+    -- Daftar resep (JSON array)
+    COALESCE(
+        (SELECT JSON_AGG(
+            JSON_BUILD_OBJECT(
+                'id',              rx.id,
+                'medicationName',  rx.medication_name,
+                'dosage',          rx.dosage,
+                'frequency',       rx.frequency,
+                'duration',        rx.duration,
+                'notes',           rx.notes
+            ) ORDER BY rx.created_at
+        )
+        FROM public.prescriptions rx
+        WHERE rx.visit_id = v.id),
+        '[]'::json
+    ) AS prescriptions
+
+FROM public.visits v
+JOIN  public.patients p        ON p.id = v.patient_id
+LEFT JOIN public.users u_doc   ON u_doc.id = v.doctor_id
+LEFT JOIN public.triage_results tr ON tr.visit_id = v.id
+WHERE v.pharmacy_status IS NOT NULL
+ORDER BY
+    CASE v.pharmacy_status
+        WHEN 'PENDING'    THEN 1
+        WHEN 'PROCESSING' THEN 2
+        WHEN 'COMPLETED'  THEN 3
+    END,
+    v.created_at ASC;
+
+COMMENT ON VIEW public.v_pharmacy_queue IS
+    'Antrian farmasi yang sudah ada pharmacy_status. Termasuk daftar resep dalam format JSON.';
+
+
+-- View: v_audit_dashboard
+-- Audit trail dengan statistik untuk halaman admin/audit
+CREATE OR REPLACE VIEW public.v_audit_dashboard AS
+SELECT
+    ar.id,
+    ar.patient_name,
+    ar.action,
+    ar.triage_priority,
+    ar.tx_hash,
+    ar.block_number,
+    ar.is_verified,
+    ar.details,
+    ar.created_at,
+    ar.visit_id,
+    v.queue_number,
+    v.status        AS visit_status
+FROM public.audit_records ar
+LEFT JOIN public.visits v ON v.id = ar.visit_id
+ORDER BY ar.created_at DESC;
+
+COMMENT ON VIEW public.v_audit_dashboard IS
+    'Audit trail untuk halaman admin/audit. Include nomor antrian dan status kunjungan.';
+
+
+-- ================================================================
+-- SECTION 9: SEED DATA — Master Symptoms
+-- Sumber: SYMPTOM_OPTIONS array di frontend/data/mock.ts
+-- 25 jenis gejala yang tersedia di form pendaftaran pasien.
+-- ================================================================
+
+INSERT INTO public.symptoms (code, label, icon, sort_order) VALUES
+    ('nyeri_dada',        'Nyeri Dada',                'Heart',         1),
+    ('sesak_napas',       'Sesak Napas',               'Wind',          2),
+    ('demam_tinggi',      'Demam Tinggi (>38.5°C)',    'Thermometer',   3),
+    ('kejang',            'Kejang',                    'Zap',           4),
+    ('batuk',             'Batuk',                     'Activity',      5),
+    ('muntah',            'Muntah',                    'AlertTriangle', 6),
+    ('diare',             'Diare',                     'Droplets',      7),
+    ('pusing',            'Pusing/Berputar',           'RotateCw',      8),
+    ('nyeri_perut',       'Nyeri Perut',               'CircleDot',     9),
+    ('luka',              'Luka/Bleeding',             'Scissors',     10),
+    ('alergi',            'Reaksi Alergi',             'ShieldAlert',  11),
+    ('lemas',             'Lemas/Lemah',               'BatteryLow',   12),
+    ('sakit_kepala',      'Sakit Kepala Berat',        'Brain',        13),
+    ('gatal',             'Gatal/Gatal-gatal',         'Bug',          14),
+    ('pilek',             'Pilek/Hidung Mampet',       'CloudRain',    15),
+    ('sakit_tenggorokan', 'Sakit Tenggorokan',         'MicOff',       16),
+    ('keringat_dingin',   'Keringat Dingin',           'Snowflake',    17),
+    ('mual',              'Mual',                      'Frown',        18),
+    ('wheezing',          'Suara Napas Mengi',         'AudioLines',   19),
+    ('berkeringat',       'Berkeringat Banyak',        'CloudDrizzle', 20),
+    ('nyeri_punggung',    'Nyeri Punggung',            'MoveDown',     21),
+    ('bengkak',           'Bengkak',                   'Maximize',     22),
+    ('ruam',              'Ruam/Kemerahan',            'Palette',      23),
+    ('sulit_menelan',     'Sulit Menelan',             'Ban',          24),
+    ('bersin',            'Bersin-bersin',             'Wind',         25)
+ON CONFLICT (code) DO UPDATE SET
+    label      = EXCLUDED.label,
+    icon       = EXCLUDED.icon,
+    sort_order = EXCLUDED.sort_order;
+
+
+-- ================================================================
+-- SECTION 10: SEED DATA — Default Users
+-- Sumber: DEFAULT_USERS di frontend/contexts/AuthContext.tsx
+--
+-- !! PERINGATAN KEAMANAN !!
+-- password_hash di bawah adalah PLACEHOLDER untuk development.
+-- Sebelum deploy ke production:
+--   1. Generate bcrypt hash yang benar untuk setiap password
+--   2. Gunakan: https://bcrypt-generator.com (rounds=12 untuk prod)
+--   3. Atau jalankan: node -e "const b=require('bcryptjs');console.log(b.hashSync('admin123',12))"
+--
+-- Default passwords (hanya untuk development/testing):
+--   admin@rsmisal.id   → admin123
+--   dokter@rsmisal.id  → dokter123
+--   farmasi@rsmisal.id → farmasi123
+--   pasien@rsmisal.id  → pasien123
+--   joko@rsmisal.id    → joko123
+-- ================================================================
+
+INSERT INTO public.users (id, name, email, password_hash, role) VALUES
+    (
+        '00000000-0000-0000-0000-000000000001',
+        'Admin RS Misal',
+        'admin@rsmisal.id',
+        '$2b$12$c4ng5HBGk73m9XoGEBkXgOdyEMTQgnCp4yIU9upsoUuVdy8tQuohG',
+        'admin'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'dr. Ahmad Fauzi, Sp.PD',
+        'dokter@rsmisal.id',
+        '$2b$12$zd4oeqbShr3pwqA4Ety1ueeK00MRkCZLtTm03bzc.tsuB9LwPMLlC',
+        'dokter'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        'Apt. Siti Rahayu',
+        'farmasi@rsmisal.id',
+        '$2b$12$MkjtA7fjDGR2ga6WfZZAxeL4RqWqYGU3u.wQqD.y/v..xTxpO6Zdi',
+        'farmasi'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000004',
+        'Budi Santoso',
+        'pasien@rsmisal.id',
+        '$2b$12$zwX.KgbSxRYsXc4KWnmaWuXYA.9FYMXSIWFI80rFgAlb6FI5c2Qv2',
+        'pasien'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000005',
+        'Joko Anonim',
+        'joko@rsmisal.id',
+        '$2b$12$LqTecgA2fkDK0xOVVMF0repYSYsJr9X2hoBfso3NDjmINb14vxBUm',
+        'pasien'
+    )
+ON CONFLICT (email) DO NOTHING;
+
+
+-- ================================================================
+-- SECTION 11: SEED DATA — Default Registered Patients
+-- Sumber: DEFAULT_REGISTERED_PATIENTS di PatientContext.tsx
+-- ================================================================
+
+INSERT INTO public.patients (
+    id,
+    user_id,
+    name,
+    date_of_birth,
+    age,
+    gender,
+    nik,
+    bpjs_number,
+    phone,
+    address,
+    faskes
+) VALUES
+    (
+        'a1b2c3d4-0001-0001-0001-000000000001',
+        '00000000-0000-0000-0000-000000000004',
+        -- ^ linked ke akun user Budi Santoso
+        'Budi Santoso',
+        '1979-05-12',
+        45,
+        'L',
+        '3201234567890001',
+        '0001234567890',
+        '081234567890',
+        'Jl. Merdeka No. 45, RT 01/RW 02, Jakarta Selatan',
+        'Tingkat 1 - Klinik Sehat Bersama'
+    ),
+    (
+        'a1b2c3d4-0002-0002-0002-000000000002',
+        '00000000-0000-0000-0000-000000000005',
+        -- ^ linked ke akun user Joko Anonim
+        'Joko Anonim',
+        '1990-08-20',
+        33,
+        'L',
+        NULL,
+        -- ^ tidak punya NIK (pasien anonim)
+        NULL,
+        -- ^ tidak punya BPJS
+        '089876543210',
+        'Jl. Mawar No. 12, Bekasi',
+        NULL
+        -- ^ tidak terdaftar di faskes manapun
+    )
+ON CONFLICT DO NOTHING;
+
+
+-- ================================================================
+-- VERIFIKASI AKHIR
+-- Jalankan query berikut setelah setup untuk memverifikasi
+-- semua tabel berhasil dibuat:
+-- ================================================================
+/*
+
+-- Cek semua tabel
+SELECT
+    schemaname,
+    tablename,
+    hasindexes,
+    hasrules,
+    hastriggers
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY tablename;
+
+-- Cek jumlah data seed
+SELECT 'users'    AS tabel, COUNT(*) FROM public.users    UNION ALL
+SELECT 'patients' AS tabel, COUNT(*) FROM public.patients UNION ALL
+SELECT 'symptoms' AS tabel, COUNT(*) FROM public.symptoms;
+
+-- Cek ENUM types yang terdaftar
+SELECT typname, enumlabel
+FROM pg_enum e
+JOIN pg_type t ON t.oid = e.enumtypid
+ORDER BY typname, enumsortorder;
+
+-- Cek RLS aktif
+SELECT tablename, rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY tablename;
+
+-- Test view v_queue_full (harus return 0 rows, tapi tidak error)
+SELECT COUNT(*) FROM public.v_queue_full;
+
+-- Test view v_pharmacy_queue
+SELECT COUNT(*) FROM public.v_pharmacy_queue;
+
+-- Test view v_audit_dashboard
+SELECT COUNT(*) FROM public.v_audit_dashboard;
+
+*/
+
+-- ================================================================
+-- RINGKASAN TABEL DAN FUNGSINYA
+-- ================================================================
+--
+--  TABEL              | MENGGANTIKAN                  | DIGUNAKAN OLEH
+--  -------------------|-------------------------------|----------------------------------
+--  users              | localStorage rs_misal_users   | AuthContext.tsx
+--  patients           | localStorage rs_misal_         | PatientContext.tsx,
+--                     |   registered_patients         |   admin/input-pasien
+--  visits             | localStorage rs_misal_queue   | QueueContext.tsx, semua dashboard
+--  vital_signs        | field vitalSigns di queue     | admin/input-pasien (step vital)
+--  triage_results     | field triageResult di queue   | AI engine, hasil triage
+--  symptoms           | SYMPTOM_OPTIONS di mock.ts    | form pendaftaran (lookup)
+--  visit_symptoms     | field symptoms[] di queue     | form pendaftaran (M:M junction)
+--  prescriptions      | field prescriptions[] di queue| dokter/periksa, farmasi dashboard
+--  audit_records      | AUDIT_RECORDS di mock.ts      | admin/audit
+--
+--  VIEW                    | FUNGSI
+--  ------------------------|----------------------------------------
+--  v_queue_full            | Data antrian lengkap + triage + vitals
+--  v_pharmacy_queue        | Antrian farmasi + resep dalam JSON
+--  v_audit_dashboard       | Audit trail untuk halaman admin/audit
+--
+-- ================================================================
+-- END OF FILE
+-- Total: 9 tabel, 3 views, 5 enum types, 16+ indexes, 2 triggers
+-- ================================================================
