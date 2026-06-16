@@ -27,6 +27,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { UserRole } from "@/types";
 import { Toaster, toast } from "sonner";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 export default function Register() {
   const router = useRouter();
@@ -135,15 +136,15 @@ export default function Register() {
                 damping: 20,
                 delay: 0.2,
               }}
-              className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-4 shadow-xl shadow-emerald-500/20"
+              className="relative w-14 h-14 mx-auto rounded-2xl overflow-hidden mb-4 shadow-xl shadow-emerald-500/20 flex-shrink-0"
             >
-              <HeartPulse className="w-7 h-7 text-white" />
+              <Image src="/logo.png" alt="Logo RS 212" fill className="object-cover" />
             </motion.div>
             <CardTitle className="text-2xl font-bold text-card-foreground">
               Daftar Akun Baru
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Buat akun untuk mengakses sistem RS Misal
+              Buat akun untuk mengakses sistem Rumah Sakit 212
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5 pt-4">
@@ -218,11 +219,10 @@ export default function Register() {
                         key={opt.value}
                         type="button"
                         onClick={() => setRole(opt.value)}
-                        className={`p-3 rounded-xl border text-center transition-all ${
-                          isSelected
+                        className={`p-3 rounded-xl border text-center transition-all ${isSelected
                             ? "bg-emerald-500/15 border-emerald-500/50 ring-1 ring-emerald-500/30"
                             : "bg-muted/50 border-border hover:bg-muted"
-                        }`}
+                          }`}
                       >
                         <Icon
                           className={`w-5 h-5 mx-auto mb-1.5 ${isSelected ? "text-emerald-400" : "text-slate-400"}`}

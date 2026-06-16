@@ -17,8 +17,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RS Misal Triage & Hospital Management",
+  title: "Rumah Sakit 212 Triage & Hospital Management",
   description: "Sistem Manajemen Antrian dan Triage Rumah Sakit",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

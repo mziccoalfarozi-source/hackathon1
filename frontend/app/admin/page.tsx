@@ -35,7 +35,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <SlideUp>
         <h1 className="text-2xl font-bold text-foreground">Dashboard Admin</h1>
-        <p className="text-sm text-muted-foreground mt-1">Kelola pendaftaran dan antrian pasien RS Misal</p>
+        <p className="text-sm text-muted-foreground mt-1">Kelola pendaftaran dan antrian pasien Rumah Sakit 212</p>
       </SlideUp>
 
       {/* Quick Actions */}
@@ -169,22 +169,20 @@ export default function AdminDashboard() {
                   transition={{ duration: 0.3, delay: 0.5 + i * 0.08 }}
                   className="flex items-center gap-4 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
                 >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold text-white ${
-                    patient.triageResult.priority === 'CRITICAL' ? 'bg-red-500' :
-                    patient.triageResult.priority === 'HIGH' ? 'bg-orange-500' :
-                    patient.triageResult.priority === 'MEDIUM' ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold text-white ${patient.triageResult.priority === 'CRITICAL' ? 'bg-red-500' :
+                      patient.triageResult.priority === 'HIGH' ? 'bg-orange-500' :
+                        patient.triageResult.priority === 'MEDIUM' ? 'bg-yellow-500' : 'bg-green-500'
+                    }`}>
                     {patient.queueNumber}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-card-foreground truncate">{patient.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{patient.complaint}</p>
                   </div>
-                  <Badge variant="outline" className={`text-xs ${
-                    patient.status === 'WAITING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                    patient.status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                    'bg-green-50 text-green-700 border-green-200'
-                  }`}>
+                  <Badge variant="outline" className={`text-xs ${patient.status === 'WAITING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      patient.status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        'bg-green-50 text-green-700 border-green-200'
+                    }`}>
                     {patient.status === 'WAITING' ? 'Menunggu' : patient.status === 'IN_PROGRESS' ? 'Diperiksa' : 'Selesai'}
                   </Badge>
                 </motion.div>

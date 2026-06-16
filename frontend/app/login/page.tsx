@@ -14,6 +14,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { HeartPulse, Eye, EyeOff, LogIn, ArrowLeft } from "lucide-react";
+import Image from "next/image";
 import { useAuth, getRoleDashboardPath } from "@/contexts/AuthContext";
 import { Toaster, toast } from "sonner";
 import { motion } from "framer-motion";
@@ -105,12 +106,12 @@ export default function Login() {
                 damping: 20,
                 delay: 0.2,
               }}
-              className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-4 shadow-xl shadow-emerald-500/20"
+              className="relative w-14 h-14 mx-auto rounded-2xl overflow-hidden mb-4 shadow-xl shadow-emerald-500/20 flex-shrink-0"
             >
-              <HeartPulse className="w-7 h-7 text-white" />
+              <Image src="/logo.png" alt="Logo RS 212" fill className="object-cover" />
             </motion.div>
             <CardTitle className="text-2xl font-bold text-card-foreground">
-              Masuk ke RS Misal
+              Masuk ke Rumah Sakit 212
             </CardTitle>
             <CardDescription className="text-muted-foreground">
               Masuk dengan akun yang telah terdaftar

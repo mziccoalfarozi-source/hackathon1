@@ -23,7 +23,7 @@ interface AuthContextType {
     email: string,
     password: string,
     role: UserRole,
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; userId?: string; error?: string }>;
   changePassword: (
     userId: string,
     newPassword: string,
@@ -94,12 +94,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     role: UserRole,
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<{ success: boolean; userId?: string; error?: string }> => {
     try {
       const passwordHash = await bcrypt.hash(password, 12);
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("users")
-        .insert({ name, email, password_hash: passwordHash, role });
+        .insert({ name, email, password_hash: passwordHash, role })
+        .select("id")
+        .single();
 
       if (error) {
         if (error.code === "23505")
@@ -107,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: "Terjadi kesalahan, coba lagi" };
       }
 
-      return { success: true };
+      return { success: true, userId: data?.id };
     } catch {
       return { success: false, error: "Terjadi kesalahan, coba lagi" };
     }

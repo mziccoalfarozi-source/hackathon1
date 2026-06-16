@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   HeartPulse, Phone, Mail, MapPin, Clock, ArrowRight,
   Stethoscope, FlaskConical, Microscope,
@@ -48,12 +49,12 @@ export default function Home() {
               <motion.div
                 whileHover={{ scale: 1.08, rotate: 3 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20"
+                className="relative w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20 flex-shrink-0"
               >
-                <HeartPulse className="w-5 h-5 text-white" />
+                <Image src="/logo.png" alt="Logo Rumah Sakit 212" fill className="object-cover" />
               </motion.div>
               <div className="flex flex-col">
-                <span className="text-base font-bold text-foreground leading-tight tracking-tight">RS Misal</span>
+                <span className="text-base font-bold text-foreground leading-tight tracking-tight">Rumah Sakit 212</span>
                 <span className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight font-medium">Rumah Sakit Terpercaya</span>
               </div>
             </Link>
@@ -153,7 +154,7 @@ export default function Home() {
 
             <SlideUp delay={0.35}>
               <p className="text-lg text-slate-600 dark:text-slate-300 mb-10 leading-relaxed max-w-2xl">
-                RS Misal hadir dengan teknologi AI untuk triase pasien yang lebih cepat dan akurat.
+                Rumah Sakit 212 hadir dengan teknologi AI untuk triase pasien yang lebih cepat dan akurat.
                 Didukung sistem blockchain untuk rekam medis yang transparan dan aman.
               </p>
             </SlideUp>
@@ -224,36 +225,36 @@ export default function Home() {
       {/* Keunggulan */}
       <div className="bg-slate-50 dark:bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <SlideUp className="text-center mb-14">
-          <span className="inline-block text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 rounded-full px-4 py-1.5 mb-4 uppercase tracking-wider">Mengapa RS Misal?</span>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Keunggulan Kami</h2>
-          <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-            Menggabungkan teknologi terdepan dengan pelayanan kesehatan yang manusiawi
-          </p>
-        </SlideUp>
+          <SlideUp className="text-center mb-14">
+            <span className="inline-block text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 rounded-full px-4 py-1.5 mb-4 uppercase tracking-wider">Mengapa Rumah Sakit 212?</span>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Keunggulan Kami</h2>
+            <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+              Menggabungkan teknologi terdepan dengan pelayanan kesehatan yang manusiawi
+            </p>
+          </SlideUp>
 
-        <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-4 gap-6" staggerDelay={0.1}>
-          {advantages.map((adv) => {
-            const Icon = adv.icon
-            return (
-              <StaggerItem key={adv.title}>
-                <motion.div
-                  whileHover={{ y: -6, borderColor: 'rgb(167, 243, 208)' }}
-                  className="group bg-white dark:bg-card rounded-2xl p-6 border border-slate-200 dark:border-border shadow-md dark:shadow-none transition-all duration-300"
-                >
+          <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-4 gap-6" staggerDelay={0.1}>
+            {advantages.map((adv) => {
+              const Icon = adv.icon
+              return (
+                <StaggerItem key={adv.title}>
                   <motion.div
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-800/40 flex items-center justify-center mb-4 transition-colors"
+                    whileHover={{ y: -6, borderColor: 'rgb(167, 243, 208)' }}
+                    className="group bg-white dark:bg-card rounded-2xl p-6 border border-slate-200 dark:border-border shadow-md dark:shadow-none transition-all duration-300"
                   >
-                    <Icon className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-800/40 flex items-center justify-center mb-4 transition-colors"
+                    >
+                      <Icon className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    </motion.div>
+                    <h3 className="font-semibold text-slate-900 dark:text-white mb-2">{adv.title}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{adv.desc}</p>
                   </motion.div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white mb-2">{adv.title}</h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{adv.desc}</p>
-                </motion.div>
-              </StaggerItem>
-            )
-          })}
-        </StaggerContainer>
+                </StaggerItem>
+              )
+            })}
+          </StaggerContainer>
         </div>
       </div>
 
@@ -345,9 +346,9 @@ export default function Home() {
 
               <div className="space-y-5">
                 {[
-                  { icon: MapPin, title: 'Alamat', lines: ['Jl. Kesehatan No. 123, Kelurahan Sejahtera, Kecamatan Sehat, Kota Bahagia 12345'] },
-                  { icon: Phone, title: 'Telepon', lines: ['(021) 1234-5678', 'Hotline UGD: 0800-1234-5678'] },
-                  { icon: Mail, title: 'Email', lines: ['info@rsmisal.id'] },
+                  { icon: MapPin, title: 'Alamat', lines: ['Jl. Peta, Kahuripan, Kec. Tawang, Kab. Tasikmalaya, Jawa Barat 46115'] },
+                  { icon: Phone, title: 'Telepon', lines: ['0898-7782-689', 'Hotline UGD: 0895-3541-02316'] },
+                  { icon: Mail, title: 'Email', lines: ['m.ziccoalfarozi@gmail.com'] },
                   { icon: Clock, title: 'Jam Operasional', lines: ['Rawat Jalan: Senin sampai Sabtu, 08:00 sampai 16:00', 'UGD: 24 Jam'] },
                 ].map((contact, i) => {
                   const ContactIcon = contact.icon
@@ -381,15 +382,35 @@ export default function Home() {
                   <Building2 className="w-5 h-5 text-emerald-400" />
                   Lokasi Kami
                 </h3>
-                <div className="bg-slate-50 dark:bg-slate-700 rounded-xl h-64 flex items-center justify-center border border-slate-200 dark:border-slate-600">
-                  <div className="text-center">
+                <a
+                  href="https://maps.app.goo.gl/8J4xusMpdx7gbprY9"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block bg-slate-50 dark:bg-slate-700 rounded-xl h-64 flex items-center justify-center border border-slate-200 dark:border-slate-600 hover:border-emerald-400 dark:hover:border-emerald-500 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10 cursor-pointer overflow-hidden relative"
+                >
+                  {/* Background grid pattern */}
+                  <div className="absolute inset-0 opacity-30 dark:opacity-10"
+                    style={{
+                      backgroundImage: 'linear-gradient(#94a3b8 1px, transparent 1px), linear-gradient(90deg, #94a3b8 1px, transparent 1px)',
+                      backgroundSize: '32px 32px'
+                    }}
+                  />
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/5 transition-all duration-300" />
+                  <div className="text-center relative z-10">
                     <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>
-                      <MapPin className="w-10 h-10 text-emerald-400/60 mx-auto mb-2" />
+                      <div className="w-14 h-14 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg shadow-emerald-500/40 group-hover:scale-110 transition-transform duration-300">
+                        <MapPin className="w-7 h-7 text-white" />
+                      </div>
                     </motion.div>
-                    <p className="text-sm text-slate-400">Google Maps</p>
-                    <p className="text-xs text-slate-500 mt-1">Jl. Kesehatan No. 123</p>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Rumah Sakit 212</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[200px] mx-auto leading-relaxed">Jl. Peta, Kahuripan, Kec. Tawang,<br/>Kab. Tasikmalaya</p>
+                    <span className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 transition-colors">
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                      Buka di Google Maps ↗
+                    </span>
                   </div>
-                </div>
+                </a>
                 <div className="mt-6 grid grid-cols-2 gap-3">
                   <div className="bg-slate-100 dark:bg-slate-700/50 rounded-lg p-3 text-center">
                     <ParkingCircle className="w-4 h-4 text-slate-400 mx-auto mb-1" />
@@ -413,17 +434,17 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                <HeartPulse className="w-4 h-4 text-white" />
+              <div className="relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+                <Image src="/logo.png" alt="Logo Rumah Sakit 212" fill className="object-cover" />
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">RS Misal</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Rumah Sakit 212</p>
                 <p className="text-[10px] text-slate-600 dark:text-slate-400">Rumah Sakit Terpercaya</p>
               </div>
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-400">
-              © 2026 RS Misal. Seluruh hak cipta dilindungi.
+              © 2026 Rumah Sakit 212. Seluruh hak cipta dilindungi.
             </p>
           </div>
         </div>

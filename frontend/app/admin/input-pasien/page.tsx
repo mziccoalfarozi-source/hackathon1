@@ -76,6 +76,7 @@ export default function InputPasien() {
     gender: "L" as "L" | "P",
     nik: "",
     bpjs: "",
+    faskes: "",
     phone: "",
     address: "",
     email: "",
@@ -110,12 +111,20 @@ export default function InputPasien() {
 
   const handleSubmitNewPatient = async () => {
     try {
-      register(
+      // Buat akun login terlebih dahulu, ambil userId yang dikembalikan
+      const registerResult = await register(
         newPatient.name,
         newPatient.email,
         newPatient.password,
         "pasien",
       );
+
+      if (!registerResult.success) {
+        toast.error(registerResult.error || "Gagal membuat akun pasien.");
+        return;
+      }
+
+      // Daftarkan data pasien ke tabel patients, hubungkan dengan userId
       const added = await addRegisteredPatient({
         name: newPatient.name,
         dob: newPatient.dob,
@@ -123,8 +132,10 @@ export default function InputPasien() {
         gender: newPatient.gender,
         nik: newPatient.nik,
         bpjs: newPatient.bpjs,
+        faskes: newPatient.faskes || undefined,
         phone: newPatient.phone,
         address: newPatient.address,
+        userId: registerResult.userId, // hubungkan ke akun users
       });
       toast.success("Pasien baru berhasil didaftarkan dan akun dibuat!");
       setMode("search");
@@ -135,6 +146,7 @@ export default function InputPasien() {
         gender: "L",
         nik: "",
         bpjs: "",
+        faskes: "",
         phone: "",
         address: "",
         email: "",
@@ -269,27 +281,27 @@ export default function InputPasien() {
     const cfg =
       lastAdded.triageResult.priority === "CRITICAL"
         ? {
-            bg: "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50",
-            text: "text-red-700 dark:text-red-400",
-            badge: "bg-red-600",
-          }
+          bg: "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50",
+          text: "text-red-700 dark:text-red-400",
+          badge: "bg-red-600",
+        }
         : lastAdded.triageResult.priority === "HIGH"
           ? {
-              bg: "bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50",
-              text: "text-orange-700 dark:text-orange-400",
-              badge: "bg-orange-500",
-            }
+            bg: "bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50",
+            text: "text-orange-700 dark:text-orange-400",
+            badge: "bg-orange-500",
+          }
           : lastAdded.triageResult.priority === "MEDIUM"
             ? {
-                bg: "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900/50",
-                text: "text-yellow-700 dark:text-yellow-400",
-                badge: "bg-yellow-500",
-              }
+              bg: "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900/50",
+              text: "text-yellow-700 dark:text-yellow-400",
+              badge: "bg-yellow-500",
+            }
             : {
-                bg: "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50",
-                text: "text-green-700 dark:text-green-400",
-                badge: "bg-green-500",
-              };
+              bg: "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50",
+              text: "text-green-700 dark:text-green-400",
+              badge: "bg-green-500",
+            };
 
     return (
       <motion.div
@@ -429,22 +441,20 @@ export default function InputPasien() {
           {stepLabels.map((label, i) => (
             <div key={i} className="flex items-center gap-2">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                  step > i + 1
-                    ? "bg-blue-600 text-white"
-                    : step === i + 1
-                      ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-500"
-                      : "bg-muted text-muted-foreground"
-                }`}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step > i + 1
+                  ? "bg-blue-600 text-white"
+                  : step === i + 1
+                    ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-2 border-blue-600 dark:border-blue-500"
+                    : "bg-muted text-muted-foreground"
+                  }`}
               >
                 {step > i + 1 ? <Check className="w-4 h-4" /> : i + 1}
               </div>
               <span
-                className={`hidden sm:inline text-sm font-medium ${
-                  step === i + 1
-                    ? "text-blue-700 dark:text-blue-400"
-                    : "text-muted-foreground"
-                }`}
+                className={`hidden sm:inline text-sm font-medium ${step === i + 1
+                  ? "text-blue-700 dark:text-blue-400"
+                  : "text-muted-foreground"
+                  }`}
               >
                 {label}
               </span>
@@ -578,7 +588,7 @@ export default function InputPasien() {
                   Registrasi Pasien Baru
                 </CardTitle>
                 <CardDescription>
-                  Daftarkan pasien ke database RS Misal dan buatkan akun login
+                  Daftarkan pasien ke database Rumah Sakit 212 dan buatkan akun login
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
@@ -639,7 +649,7 @@ export default function InputPasien() {
                     <Label>
                       NIK{" "}
                       <span className="text-xs text-muted-foreground">
-                        (Opsional)
+                        (Tidak Wajib)
                       </span>
                     </Label>
                     <Input
@@ -647,14 +657,14 @@ export default function InputPasien() {
                       onChange={(e) =>
                         setNewPatient({ ...newPatient, nik: e.target.value })
                       }
-                      placeholder="KTP"
+                      placeholder="Tidak Wajib Diisi"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>
                       No. BPJS{" "}
                       <span className="text-xs text-muted-foreground">
-                        (Opsional)
+                        (Tidak Wajib)
                       </span>
                     </Label>
                     <Input
@@ -662,7 +672,22 @@ export default function InputPasien() {
                       onChange={(e) =>
                         setNewPatient({ ...newPatient, bpjs: e.target.value })
                       }
-                      placeholder="BPJS"
+                      placeholder="Tidak Wajib Diisi "
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>
+                      Faskes{" "}
+                      <span className="text-xs text-muted-foreground">
+                        (Tidak Wajib)
+                      </span>
+                    </Label>
+                    <Input
+                      value={newPatient.faskes}
+                      onChange={(e) =>
+                        setNewPatient({ ...newPatient, faskes: e.target.value })
+                      }
+                      placeholder="Fasilitas Kesehatan Tingkat-"
                     />
                   </div>
                   <div className="space-y-2">
@@ -779,18 +804,16 @@ export default function InputPasien() {
                         key={sym.value}
                         type="button"
                         onClick={() => toggleSymptom(sym.value)}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm border transition-all text-left ${
-                          patient.symptoms.includes(sym.value)
-                            ? "bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-400"
-                            : "bg-background border-input text-muted-foreground hover:border-accent"
-                        }`}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm border transition-all text-left ${patient.symptoms.includes(sym.value)
+                          ? "bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-400"
+                          : "bg-background border-input text-muted-foreground hover:border-accent"
+                          }`}
                       >
                         <div
-                          className={`w-4 h-4 rounded border flex items-center justify-center ${
-                            patient.symptoms.includes(sym.value)
-                              ? "bg-blue-500 border-blue-500"
-                              : "border-input"
-                          }`}
+                          className={`w-4 h-4 rounded border flex items-center justify-center ${patient.symptoms.includes(sym.value)
+                            ? "bg-blue-500 border-blue-500"
+                            : "border-input"
+                            }`}
                         >
                           {patient.symptoms.includes(sym.value) && (
                             <Check className="w-3 h-3 text-white" />

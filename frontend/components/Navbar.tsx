@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { HeartPulse, ListOrdered, FileSearch, Stethoscope, Menu, X } from 'lucide-react'
+import Image from 'next/image'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -31,9 +32,9 @@ export default function Navbar() {
             <motion.div
               whileHover={{ scale: 1.08, rotate: 3 }}
               whileTap={{ scale: 0.95 }}
-              className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md"
-            >
-              <HeartPulse className="w-5 h-5 text-white" />
+              className="relative w-9 h-9 rounded-lg overflow-hidden shadow-md flex-shrink-0"
+              >
+                <Image src="/logo.png" alt="Logo RS 212" fill className="object-cover" />
             </motion.div>
             <div className="flex flex-col">
               <span className="text-sm font-bold text-foreground leading-tight">AI Triage</span>

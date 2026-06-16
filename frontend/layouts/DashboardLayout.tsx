@@ -9,6 +9,7 @@ import {
   HeartPulse, LogOut, Menu, X,
   type LucideIcon
 } from 'lucide-react'
+import Image from 'next/image'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PageTransition } from '@/components/motion'
@@ -51,19 +52,19 @@ export default function DashboardLayout({ role, navItems, accentColor, accentBg,
       <header className="sticky top-0 z-50 w-full border-b border-border bg-card/90 backdrop-blur-sm transition-colors duration-300 shadow-sm dark:shadow-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            
+
             {/* Left: Logo */}
             <div className="flex-shrink-0 flex items-center">
               <Link href={`/${role}`} className="flex items-center gap-2.5 group">
                 <motion.div
                   whileHover={{ scale: 1.08, rotate: 2 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`w-9 h-9 rounded-xl bg-gradient-to-br ${accentGradient} flex items-center justify-center shadow-md`}
+                  className={`relative w-9 h-9 rounded-xl overflow-hidden shadow-md flex-shrink-0`}
                 >
-                  <HeartPulse className="w-5 h-5 text-white" />
+                  <Image src="/logo.png" alt="Logo RS 212" fill className="object-cover" />
                 </motion.div>
                 <div className="flex flex-col hidden sm:flex">
-                  <span className="text-sm font-bold text-foreground leading-tight">RS Misal</span>
+                  <span className="text-sm font-bold text-foreground leading-tight">Rumah Sakit 212</span>
                   <span className={`text-[10px] font-semibold leading-tight ${accentColor}`}>{getRoleLabel(role)}</span>
                 </div>
               </Link>
@@ -78,11 +79,10 @@ export default function DashboardLayout({ role, navItems, accentColor, accentBg,
                   <Link
                     key={item.path}
                     href={item.path}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 relative group ${
-                      active
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 relative group ${active
                         ? `${accentBg} ${accentColor} shadow-sm dark:bg-white/10 dark:shadow-none`
                         : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                    }`}
+                      }`}
                   >
                     <Icon className={`w-4 h-4 transition-transform ${active ? '' : 'group-hover:scale-110'}`} />
                     <span>{item.label}</span>
@@ -101,7 +101,7 @@ export default function DashboardLayout({ role, navItems, accentColor, accentBg,
             {/* Right: User, Theme, Logout */}
             <div className="hidden md:flex items-center gap-4">
               <ThemeToggle />
-              
+
               <div className="h-6 w-px bg-border" /> {/* Divider */}
 
               <div className="flex items-center gap-3">
@@ -159,11 +159,10 @@ export default function DashboardLayout({ role, navItems, accentColor, accentBg,
                       key={item.path}
                       href={item.path}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                        active
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${active
                           ? `${accentBg} ${accentColor} dark:bg-white/10`
                           : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-5 h-5" />
                       <span>{item.label}</span>

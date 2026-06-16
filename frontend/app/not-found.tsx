@@ -81,7 +81,7 @@ export default function NotFound() {
             Halaman Tidak Ditemukan
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground mb-8 leading-relaxed max-w-sm mx-auto">
-            Maaf, halaman yang Anda cari tidak ada atau mungkin telah dipindahkan. 
+            Maaf, halaman yang Anda cari tidak ada atau mungkin telah dipindahkan.
             Pastikan URL yang Anda masukkan sudah benar.
           </p>
         </motion.div>
@@ -117,7 +117,7 @@ export default function NotFound() {
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
             <HeartPulse className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-xs text-muted-foreground font-medium">RS Misal Rumah Sakit Terpercaya</span>
+          <span className="text-xs text-muted-foreground font-medium">Rumah Sakit 212 Rumah Sakit Terpercaya</span>
         </motion.div>
       </div>
     </div>
