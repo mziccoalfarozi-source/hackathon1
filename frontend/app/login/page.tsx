@@ -55,11 +55,12 @@ export default function Login() {
   };
 
   const demoAccounts = [
-    { role: "Admin", email: "admin@rsmisal.id", password: "admin123" },
-    { role: "Dokter", email: "dokter@rsmisal.id", password: "dokter123" },
-    { role: "Farmasi", email: "farmasi@rsmisal.id", password: "farmasi123" },
-    { role: "Pasien 1", email: "pasien@rsmisal.id", password: "pasien123" },
-    { role: "Pasien 2", email: "joko@rsmisal.id", password: "joko123" },
+    { role: "Admin", email: "Ammar@212.id", password: "admin123" },
+    { role: "Dokter 1", email: "Farid@212.id", password: "dokter123" },
+    { role: "Dokter 2", email: "Zicco@212.id", password: "123456" },
+    { role: "Farmasi", email: "Adryan@212.id", password: "farmasi123" },
+    { role: "Pasien 1", email: "Ammay@212.id", password: "pasien123" },
+    { role: "Pasien 2", email: "Tougashi@212.id", password: "jiko123" },
   ];
 
   return (
@@ -108,7 +109,7 @@ export default function Login() {
               }}
               className="relative w-14 h-14 mx-auto rounded-2xl overflow-hidden mb-4 shadow-xl shadow-emerald-500/20 flex-shrink-0"
             >
-              <Image src="/logo.png" alt="Logo RS 212" fill className="object-cover" />
+              <Image src="/logo.png" alt="Logo RS 212" fill sizes="56px" className="object-cover" />
             </motion.div>
             <CardTitle className="text-2xl font-bold text-card-foreground">
               Masuk ke Rumah Sakit 212

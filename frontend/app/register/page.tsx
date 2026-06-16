@@ -38,6 +38,7 @@ export default function Register() {
   const [role, setRole] = useState<UserRole | "">("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -49,11 +50,12 @@ export default function Register() {
     return null;
   }
 
+  // Pasien didaftarkan oleh admin, bukan self-register
   const roleOptions = [
     {
       value: "admin" as UserRole,
       label: "Admin",
-      desc: "Pendaftaran & manajemen pasien",
+      desc: "Manajemen sistem & pendaftaran",
       icon: Shield,
       color: "text-blue-400",
     },
@@ -86,13 +88,63 @@ export default function Register() {
     setIsLoading(true);
     const result = await register(name, email, password, role);
     if (result.success) {
-      toast.success("Registrasi berhasil! Silakan login.");
-      setTimeout(() => router.push("/login"), 1000);
+      if (result.pending) {
+        setIsPending(true);
+      } else {
+        toast.success("Registrasi berhasil! Silakan login.");
+        setTimeout(() => router.push("/login"), 1000);
+      }
     } else {
       toast.error(result.error || "Registrasi gagal");
     }
     setIsLoading(false);
   };
+
+  // Tampilan saat registrasi berhasil masuk ke antrian pending
+  if (isPending) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <div className="bg-card border border-border rounded-2xl p-8 shadow-2xl text-center space-y-6">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
+              className="w-20 h-20 mx-auto rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"
+            >
+              <svg className="w-10 h-10 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </motion.div>
+            <div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Menunggu Verifikasi</h2>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Pendaftaran Anda telah berhasil dikirim. Akun Anda akan diaktifkan setelah
+                diverifikasi oleh <span className="font-semibold text-foreground">Admin Rumah Sakit 212</span>.
+              </p>
+            </div>
+            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-left space-y-2">
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Info</p>
+              <p className="text-sm text-amber-800 dark:text-amber-300">
+                Setelah disetujui, Anda bisa login menggunakan email dan password yang telah didaftarkan.
+              </p>
+            </div>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-sm transition-all"
+            >
+              Kembali ke Halaman Login
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
@@ -138,7 +190,7 @@ export default function Register() {
               }}
               className="relative w-14 h-14 mx-auto rounded-2xl overflow-hidden mb-4 shadow-xl shadow-emerald-500/20 flex-shrink-0"
             >
-              <Image src="/logo.png" alt="Logo RS 212" fill className="object-cover" />
+              <Image src="/logo.png" alt="Logo RS 212" fill sizes="56px" className="object-cover" />
             </motion.div>
             <CardTitle className="text-2xl font-bold text-card-foreground">
               Daftar Akun Baru

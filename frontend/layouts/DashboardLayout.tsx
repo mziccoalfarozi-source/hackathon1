@@ -61,7 +61,7 @@ export default function DashboardLayout({ role, navItems, accentColor, accentBg,
                   whileTap={{ scale: 0.95 }}
                   className={`relative w-9 h-9 rounded-xl overflow-hidden shadow-md flex-shrink-0`}
                 >
-                  <Image src="/logo.png" alt="Logo RS 212" fill className="object-cover" />
+                  <Image src="/logo.png" alt="Logo RS 212" fill sizes="36px" className="object-cover" />
                 </motion.div>
                 <div className="flex flex-col hidden sm:flex">
                   <span className="text-sm font-bold text-foreground leading-tight">Rumah Sakit 212</span>

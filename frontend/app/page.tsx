@@ -51,7 +51,7 @@ export default function Home() {
                 whileTap={{ scale: 0.95 }}
                 className="relative w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20 flex-shrink-0"
               >
-                <Image src="/logo.png" alt="Logo Rumah Sakit 212" fill className="object-cover" />
+                <Image src="/logo.png" alt="Logo Rumah Sakit 212" fill sizes="40px" className="object-cover" />
               </motion.div>
               <div className="flex flex-col">
                 <span className="text-base font-bold text-foreground leading-tight tracking-tight">Rumah Sakit 212</span>
@@ -435,7 +435,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
               <div className="relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
-                <Image src="/logo.png" alt="Logo Rumah Sakit 212" fill className="object-cover" />
+                <Image src="/logo.png" alt="Logo Rumah Sakit 212" fill sizes="32px" className="object-cover" />
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Rumah Sakit 212</p>

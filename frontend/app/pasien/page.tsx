@@ -19,6 +19,8 @@ import {
   Search,
   Lock,
   KeyRound,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -43,6 +45,7 @@ export default function PasienDashboard() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // Real data states
   const [patientData, setPatientData] = useState<{
@@ -99,6 +102,7 @@ export default function PasienDashboard() {
       setIsPasswordModalOpen(false);
       setNewPassword("");
       setConfirmPassword("");
+      setShowPassword(false);
     } else {
       toast.error(res.error || "Gagal mengubah password");
     }
@@ -319,27 +323,47 @@ export default function PasienDashboard() {
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
+                      <div className="space-y-2 relative">
                         <Label htmlFor="new-password">Password Baru</Label>
-                        <Input
-                          id="new-password"
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Minimal 6 karakter"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="new-password"
+                            type={showPassword ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Minimal 6 karakter"
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 relative">
                         <Label htmlFor="confirm-password">
                           Konfirmasi Password
                         </Label>
-                        <Input
-                          id="confirm-password"
-                          type="password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Ketik ulang password baru"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="confirm-password"
+                            type={showPassword ? "text" : "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Ketik ulang password baru"
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <DialogFooter>

@@ -23,7 +23,7 @@ interface AuthContextType {
     email: string,
     password: string,
     role: UserRole,
-  ) => Promise<{ success: boolean; userId?: string; error?: string }>;
+  ) => Promise<{ success: boolean; userId?: string; pending?: boolean; error?: string }>;
   changePassword: (
     userId: string,
     newPassword: string,
@@ -94,22 +94,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     role: UserRole,
-  ): Promise<{ success: boolean; userId?: string; error?: string }> => {
+  ): Promise<{ success: boolean; userId?: string; pending?: boolean; error?: string }> => {
     try {
       const passwordHash = await bcrypt.hash(password, 12);
-      const { data, error } = await supabase
-        .from("users")
-        .insert({ name, email, password_hash: passwordHash, role })
-        .select("id")
-        .single();
 
-      if (error) {
-        if (error.code === "23505")
+      // Pasien langsung masuk ke tabel users
+      // Dokter, farmasi, admin → masuk pending dulu, nunggu approval admin
+      if (role === "pasien") {
+        const { data, error } = await supabase
+          .from("users")
+          .insert({ name, email, password_hash: passwordHash, role })
+          .select("id")
+          .single();
+
+        if (error) {
+          if (error.code === "23505")
+            return { success: false, error: "Email sudah terdaftar" };
+          return { success: false, error: "Terjadi kesalahan, coba lagi" };
+        }
+
+        return { success: true, userId: data?.id };
+      } else {
+        // Cek apakah email sudah ada di pending atau users
+        const { data: existingPending } = await supabase
+          .from("pending_registrations")
+          .select("id")
+          .eq("email", email)
+          .maybeSingle();
+
+        if (existingPending) {
+          return { success: false, error: "Email sudah dalam antrian pendaftaran" };
+        }
+
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("id")
+          .eq("email", email)
+          .maybeSingle();
+
+        if (existingUser) {
           return { success: false, error: "Email sudah terdaftar" };
-        return { success: false, error: "Terjadi kesalahan, coba lagi" };
-      }
+        }
 
-      return { success: true, userId: data?.id };
+        const { error } = await supabase
+          .from("pending_registrations")
+          .insert({ name, email, password_hash: passwordHash, role });
+
+        if (error) {
+          return { success: false, error: "Terjadi kesalahan, coba lagi" };
+        }
+
+        return { success: true, pending: true };
+      }
     } catch {
       return { success: false, error: "Terjadi kesalahan, coba lagi" };
     }
