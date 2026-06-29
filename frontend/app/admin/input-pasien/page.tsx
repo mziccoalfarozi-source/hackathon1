@@ -41,14 +41,8 @@ import {
   Brain,
   CircleCheckBig,
   Search,
-<<<<<<< Updated upstream
   Zap,
   UserX,
-=======
-  ExternalLink,
-  ShieldCheck,
-  Loader2,
->>>>>>> Stashed changes
 } from "lucide-react";
 import type { PatientData, QueuePatient, RegisteredPatient, TriageFormInput } from "@/types";
 import {
@@ -61,19 +55,9 @@ import { usePatients } from "@/contexts/PatientContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlideUp } from "@/components/motion";
-<<<<<<< Updated upstream
 import { callTriageApi, callSkipCritical } from "@/lib/api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-=======
-import {
-  logTriageToBlockchain,
-  connectWallet,
-  toBasisPoints,
-  truncateTxHash,
-  AMOY_EXPLORER,
-  type BlockchainTriageResult,
-} from "@/lib/blockchain";
->>>>>>> Stashed changes
+import { logTriageToBlockchain, connectWallet, toBasisPoints } from "@/lib/blockchain";
 
 export default function InputPasien() {
   const router = useRouter();
@@ -95,16 +79,7 @@ export default function InputPasien() {
   const [showResult, setShowResult] = useState(false);
   const [lastAdded, setLastAdded] = useState<QueuePatient | null>(null);
 
-<<<<<<< Updated upstream
   const totalSteps = 2;
-=======
-  // State blockchain
-  const [blockchainResult, setBlockchainResult] = useState<BlockchainTriageResult | null>(null);
-  const [isLoggingBlockchain, setIsLoggingBlockchain] = useState(false);
-  const [blockchainError, setBlockchainError] = useState<string | null>(null);
-
-  const totalSteps = 3;
->>>>>>> Stashed changes
 
   const { searchPatients, addRegisteredPatient } = usePatients();
   const { register } = useAuth();
@@ -196,7 +171,6 @@ export default function InputPasien() {
 
   const handleSubmit = async (isSkip: boolean = false) => {
     setIsSubmitting(true);
-<<<<<<< Updated upstream
     toast.loading(isSkip ? "Memproses Jalur Bypass Kritis..." : "Menganalisis data dengan AI...", { id: 'submit' });
 
     try {
@@ -205,6 +179,26 @@ export default function InputPasien() {
         res = await callSkipCritical(patient.id);
       } else {
         res = await callTriageApi(triageInput as TriageFormInput);
+      }
+
+      let realTxHash = res.tx_hash_initial;
+      try {
+        await connectWallet();
+        const bcResult = await logTriageToBlockchain(
+          patient.id,
+          patient.name,
+          res.result.priority,
+          toBasisPoints(res.result.confidence),
+          isSkip ? "BYPASS KRITIS" : "AI TRIAGE (INITIAL)"
+        );
+        realTxHash = bcResult.txHash;
+        toast.success(`Triage tercatat di blockchain! Block #${bcResult.blockNumber}`);
+      } catch (bcErr: any) {
+        if (bcErr?.message?.includes("user rejected") || bcErr?.message?.includes("User rejected")) {
+           toast.warning("Pencatatan blockchain dibatalkan user. Menggunakan local hash.");
+        } else {
+           console.warn("Blockchain log error:", bcErr);
+        }
       }
 
       const queuePrefix = res.result.esi_level === 1 || res.result.esi_level === 2 ? "A" : "B";
@@ -227,7 +221,7 @@ export default function InputPasien() {
         queueNumber: `${queuePrefix}-${String(queueNum).padStart(3, "0")}`,
         triageResult: res.result,
         triageFormInput: triageInput as TriageFormInput,
-        tx_hash_initial: res.tx_hash_initial,
+        tx_hash_initial: realTxHash,
         blockchain_status: 'pending',
         timestamp: new Date(),
         status: "WAITING",
@@ -238,61 +232,6 @@ export default function InputPasien() {
       setShowResult(true);
       toast.dismiss('submit');
       toast.success(isSkip ? "Pasien masuk prioritas ESI 1 (Resusitasi)!" : "Analisis AI selesai, pasien masuk antrian!");
-=======
-    setBlockchainError(null);
-    toast.loading("Menganalisis data pasien dengan AI...", { duration: 2000 });
-
-    // Simulasi delay AI (2 detik) lalu simpan ke Supabase
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    const priorityId = determinePriority();
-    const triageResult = MOCK_TRIAGE_RESULTS[priorityId];
-    const queuePrefix = priorityId === "1" || priorityId === "2" ? "A" : "B";
-    const queueNum =
-      patients.filter((p) => p.queueNumber.startsWith(queuePrefix)).length + 1;
-
-    // patient.id sudah berisi UUID dari tabel patients (set di handleSelectPatient)
-    const newPatient: QueuePatient = {
-      ...patient,
-      queueNumber: `${queuePrefix}-${String(queueNum).padStart(3, "0")}`,
-      triageResult,
-      timestamp: new Date(),
-      status: "WAITING",
-    };
-
-    try {
-      // 1. Simpan ke Supabase terlebih dahulu
-      await addPatient(newPatient);
-      setLastAdded(newPatient);
-      setShowResult(true);
-      toast.success("Pasien berhasil didaftarkan dan masuk antrian!");
-
-      // 2. Catat ke blockchain (non-blocking — gagal tidak cancel pendaftaran)
-      setIsLoggingBlockchain(true);
-      try {
-        await connectWallet();
-        const bcResult = await logTriageToBlockchain(
-          newPatient.id,                                    // visitId = UUID pasien/kunjungan
-          newPatient.name,                                  // nama pasien
-          triageResult.priority,                            // "CRITICAL" | "HIGH" | "MEDIUM" | "LOW"
-          toBasisPoints(triageResult.confidence),           // 0.94 → 9400
-          "AI TRIAGE + KONFIRMASI"                          // aksi
-        );
-        setBlockchainResult(bcResult);
-        toast.success(`Triage tercatat di blockchain! Block #${bcResult.blockNumber}`, { duration: 5000 });
-      } catch (bcErr) {
-        const msg = bcErr instanceof Error ? bcErr.message : String(bcErr);
-        // Jika user cancel MetaMask, jangan tampilkan sebagai error besar
-        if (msg.includes("user rejected") || msg.includes("User rejected")) {
-          setBlockchainError("Pencatatan blockchain dibatalkan oleh user.");
-        } else {
-          setBlockchainError(`Blockchain: ${msg}`);
-          console.warn("blockchain logTriage error:", bcErr);
-        }
-      } finally {
-        setIsLoggingBlockchain(false);
-      }
->>>>>>> Stashed changes
     } catch (err) {
       console.error("addPatient error:", err);
       toast.dismiss('submit');
@@ -444,112 +383,9 @@ export default function InputPasien() {
           </Card>
         </div>
 
-<<<<<<< Updated upstream
         <div className="flex justify-center mt-6">
           <Button onClick={handleNewPatient} className="gap-2 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
             <User className="w-4 h-4" /> Pasien Berikutnya
-=======
-            <div className="bg-background rounded-xl p-4 border border-border">
-              <div className="flex items-center gap-2 mb-2">
-                <Brain className="w-4 h-4 text-violet-600 dark:text-violet-500" />
-                <span className="text-sm font-semibold text-foreground">
-                  AI Reasoning
-                </span>
-                <Badge className="bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-400 text-xs">
-                  {(lastAdded.triageResult.confidence * 100).toFixed(0)}%
-                  confidence
-                </Badge>
-              </div>
-              <ul className="space-y-1">
-                {lastAdded.triageResult.reasoning.slice(0, 3).map((r, i) => (
-                  <li
-                    key={i}
-                    className="text-xs text-muted-foreground flex items-start gap-2"
-                  >
-                    <span className="text-emerald-500 mt-0.5">•</span>
-                    {r}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Blockchain Status Card */}
-        <Card className="border-border shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span className="text-sm font-semibold text-foreground">Blockchain Audit Trail</span>
-            </div>
-
-            {isLoggingBlockchain && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
-                Mencatat ke Polygon Amoy... Konfirmasi di MetaMask
-              </div>
-            )}
-
-            {blockchainResult && !isLoggingBlockchain && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <CircleCheckBig className="w-4 h-4 text-emerald-500" />
-                  <span className="text-sm text-emerald-600 font-medium">Tercatat di Blockchain</span>
-                  <Badge className="bg-emerald-100 text-emerald-700 text-xs">Block #{blockchainResult.blockNumber}</Badge>
-                </div>
-                <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
-                  <code className="text-xs font-mono text-muted-foreground flex-1">
-                    {truncateTxHash(blockchainResult.txHash)}
-                  </code>
-                  <Link
-                    href={blockchainResult.blockExplorerUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center gap-1 font-medium"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    Explorer
-                  </Link>
-                </div>
-              </div>
-            )}
-
-            {blockchainError && !isLoggingBlockchain && (
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-amber-600 font-medium">Blockchain tidak tercatat</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{blockchainError}</p>
-                  <p className="text-xs text-muted-foreground">Data pasien tetap tersimpan di database.</p>
-                </div>
-              </div>
-            )}
-
-            {!blockchainResult && !isLoggingBlockchain && !blockchainError && (
-              <p className="text-xs text-muted-foreground">
-                Menunggu konfirmasi MetaMask untuk mencatat ke{" "}
-                <a href={AMOY_EXPLORER} target="_blank" rel="noopener noreferrer" className="underline">Polygon Amoy</a>...
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="flex gap-3">
-          <Button
-            onClick={handleNewPatient}
-            className="flex-1 gap-2 bg-blue-600 hover:bg-blue-700"
-          >
-            <User className="w-4 h-4" />
-            Input Pasien Baru
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => router.push("/admin/antrian")}
-            className="flex-1 gap-2"
-          >
-            Lihat Antrian
-            <ChevronRight className="w-4 h-4" />
->>>>>>> Stashed changes
           </Button>
         </div>
       </motion.div>

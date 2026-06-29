@@ -39,6 +39,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SYMPTOM_OPTIONS, ESI_CONFIG } from "@/data/mock";
 import { callConfirmTriage } from "@/lib/api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { logTriageToBlockchain, connectWallet, toBasisPoints } from "@/lib/blockchain";
 
 export default function PeriksaPasien() {
   const params = useParams();
@@ -145,7 +146,7 @@ export default function PeriksaPasien() {
     toast.loading("Mencatat ke Blockchain & Menyimpan data...", { duration: 1500, id: 'submit' });
     
     try {
-      // 1. Catat ke blockchain dual-log
+      // 1. Panggil API backend (mock) untuk simpan data
       const confirmRes = await callConfirmTriage(patient.id, {
         tier_final: finalEsi,
         diubah_dokter: isEsiChanged,
@@ -153,9 +154,30 @@ export default function PeriksaPasien() {
         doctor_notes: doctorNotes
       });
 
+      let realTxHash = confirmRes.tx_hash_final;
+      try {
+        await connectWallet();
+        // Asumsi: Dokter memiliki wewenang mencatat 'DOKTER CONFIRM' ke Smart Contract yang sama
+        const bcResult = await logTriageToBlockchain(
+          patient.id,
+          patient.name,
+          finalEsi === 1 ? 'CRITICAL' : finalEsi === 2 ? 'HIGH' : finalEsi === 3 ? 'MEDIUM' : 'LOW',
+          toBasisPoints(patient.triageResult.confidence), // Pakai confidence dari AI awal
+          "DOKTER CONFIRM"
+        );
+        realTxHash = bcResult.txHash;
+        toast.success(`Konfirmasi dokter tercatat di blockchain! Block #${bcResult.blockNumber}`);
+      } catch (bcErr: any) {
+        if (bcErr?.message?.includes("user rejected") || bcErr?.message?.includes("User rejected")) {
+           toast.warning("Pencatatan blockchain dibatalkan dokter. Menggunakan local hash.");
+        } else {
+           console.warn("Blockchain log error:", bcErr);
+        }
+      }
+
       // Update patient status in local context
       updatePatientTriage(patient.id, {
-        tx_hash_final: confirmRes.tx_hash_final,
+        tx_hash_final: realTxHash,
         blockchain_status: 'confirmed',
         triageResult: {
           ...patient.triageResult,
@@ -322,7 +344,7 @@ export default function PeriksaPasien() {
                       <Tooltip formatter={(v: number) => [v.toFixed(2), 'Impact']} />
                       <Bar dataKey="value" radius={4}>
                         {patient.triageResult.shap_features.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.isNeg ? '#ef4444' : '#f59e0b'} />
+                          <Cell key={`cell-${index}`} fill={entry.shap_value < 0 ? '#ef4444' : '#f59e0b'} />
                         ))}
                       </Bar>
                     </BarChart>
