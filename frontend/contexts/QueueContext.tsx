@@ -19,6 +19,10 @@ interface QueueContextType {
     id: string,
     status: QueuePatient["status"],
   ) => Promise<void>;
+  updatePatientTriage: (
+    id: string,
+    updates: Partial<QueuePatient>
+  ) => Promise<void>;
   assignDoctor: (
     patientId: string,
     doctorId: string,
@@ -32,6 +36,20 @@ interface QueueContextType {
   updatePharmacyStatus: (
     patientId: string,
     status: "PENDING" | "PROCESSING" | "COMPLETED",
+  ) => Promise<void>;
+  updatePatientIdentity: (
+    visitId: string,
+    patientId: string,
+    updates: {
+      name: string;
+      date_of_birth?: string;
+      age?: number;
+      gender: "L" | "P";
+      nik?: string;
+      bpjs_number?: string;
+      phone: string;
+      address: string;
+    }
   ) => Promise<void>;
   getPatientById: (id: string) => QueuePatient | undefined;
   getPatientsByStatus: (status: QueuePatient["status"]) => QueuePatient[];
@@ -64,7 +82,7 @@ function dbToQueuePatient(row: any): QueuePatient {
   const triage = Array.isArray(row.triage_results)
     ? row.triage_results[0]
     : row.triage_results;
-  const vitals = Array.isArray(row.vital_signs)
+  let vitals = Array.isArray(row.vital_signs)
     ? row.vital_signs[0]
     : row.vital_signs;
   const patient = Array.isArray(row.patients) ? row.patients[0] : row.patients;
@@ -89,38 +107,52 @@ function dbToQueuePatient(row: any): QueuePatient {
     doctorName: doctor?.name || undefined,
 
     // Patient master data
+    patientId: patient?.id || "",
     name: patient?.name || "",
     age: patient?.age || 0,
     gender: patient?.gender || "L",
     nik: patient?.nik || "",
     phone: patient?.phone || "",
     address: patient?.address || "",
-
-    // Vital signs
-    vitalSigns: {
-      bloodPressure: vitals?.blood_pressure || "",
-      heartRate: vitals?.heart_rate || 0,
-      temperature: vitals?.temperature || 0,
-      oxygenSaturation: vitals?.oxygen_saturation || 0,
-      respiratoryRate: vitals?.respiratory_rate || 0,
-    },
+    isDraft: patient?.name?.startsWith("Pasien Kode") || patient?.name?.startsWith("Pasien Draft") || patient?.address?.includes("Pasien Draft") || patient?.address?.includes("Pasien Kode") || false,
 
     // Symptoms (array of codes)
     symptoms: (row.visit_symptoms || []).map(
       (s: { symptom_code: string }) => s.symptom_code,
     ),
 
-    // Triage result
+    // Triage result (Extract Meta if exists)
     triageResult: triage
-      ? {
-          priority: triage.priority,
-          priorityLabel: triage.priority_label,
-          confidence: triage.confidence,
-          reasoning: Array.isArray(triage.reasoning) ? triage.reasoning : [],
-          recommendedAction: triage.recommended_action,
-          estimatedWaitTime: triage.estimated_wait_time,
-          color: getPriorityColor(triage.priority),
-        }
+      ? (function() {
+          let reasoningArray = Array.isArray(triage.reasoning) ? [...triage.reasoning] : [];
+          let meta: any = null;
+          const metaIndex = reasoningArray.findIndex(r => typeof r === 'string' && r.startsWith('__META__:'));
+          if (metaIndex >= 0) {
+            try {
+              meta = JSON.parse(reasoningArray[metaIndex].substring(9));
+              reasoningArray.splice(metaIndex, 1);
+            } catch (e) {}
+          }
+          
+          // Re-assign extra vitals if meta exists
+          if (meta?.vitalSignsExtra) {
+            vitals = { ...vitals, ...meta.vitalSignsExtra };
+          }
+          
+          return {
+            priority: triage.priority,
+            priorityLabel: triage.priority_label,
+            confidence: triage.confidence,
+            reasoning: reasoningArray,
+            recommendedAction: triage.recommended_action,
+            estimatedWaitTime: triage.estimated_wait_time,
+            color: getPriorityColor(triage.priority),
+            esi_level: meta?.esi_level || (triage.priority === 'CRITICAL' ? 1 : triage.priority === 'HIGH' ? 2 : triage.priority === 'MEDIUM' ? 3 : 4),
+            shap_features: meta?.shap_features || [],
+            reasoning_text: meta?.reasoning_text || "",
+            is_skip_triage: meta?.is_skip_triage || false
+          };
+        })()
       : {
           priority: "LOW" as PriorityLevel,
           priorityLabel: "RENDAH",
@@ -129,7 +161,36 @@ function dbToQueuePatient(row: any): QueuePatient {
           recommendedAction: "",
           estimatedWaitTime: "",
           color: getPriorityColor("LOW"),
+          esi_level: 4
         },
+
+    // Extra fields from Meta
+    ...(function() {
+      const reasoningArray = Array.isArray(triage?.reasoning) ? triage.reasoning : [];
+      const metaStr = reasoningArray.find((r: any) => typeof r === 'string' && r.startsWith('__META__:'));
+      let meta: any = null;
+      if (metaStr) {
+        try { meta = JSON.parse(metaStr.substring(9)); } catch(e) {}
+      }
+      return {
+        tx_hash_initial: meta?.tx_hash_initial || row.blockchain_hash || undefined,
+        tx_hash_final: meta?.tx_hash_final || row.block_explorer_url || undefined,
+        blockchain_status: meta?.blockchain_status || undefined,
+        vitalSigns: {
+          bloodPressure: vitals?.blood_pressure || "",
+          heartRate: vitals?.heart_rate || 0,
+          temperature: vitals?.temperature || 0,
+          oxygenSaturation: vitals?.oxygen_saturation || 0,
+          respiratoryRate: vitals?.respiratory_rate || 0,
+          gcstotal: meta?.vitalSignsExtra?.gcstotal,
+          painScore: meta?.vitalSignsExtra?.painScore,
+          mentalStatus: meta?.vitalSignsExtra?.mentalStatus,
+          map: meta?.vitalSignsExtra?.map,
+          shockIndex: meta?.vitalSignsExtra?.shockIndex,
+          news2Score: meta?.vitalSignsExtra?.news2Score,
+        }
+      };
+    })(),
 
     // Prescriptions
     prescriptions: (row.prescriptions || []).map(
@@ -239,11 +300,47 @@ export function QueueProvider({ children }: { children: ReactNode }) {
 
   // ── addPatient: multi-table insert ──
   const addPatient = async (patient: QueuePatient): Promise<void> => {
+    // Resolve patient_id:
+    // Pasien Kode (anonymous critical) belum punya baris di tabel patients,
+    // jadi kita insert placeholder dulu dan gunakan UUID yang dikembalikan.
+    let resolvedPatientId = patient.id;
+
+    if (patient.id.startsWith("CODE-")) {
+      // Insert placeholder ke tabel patients dengan semua field yang mungkin NOT NULL
+      const { data: anonPatient, error: anonError } = await supabase
+        .from("patients")
+        .insert({
+          name: patient.name,           // e.g. "Pasien Kode 001"
+          age: 0,
+          gender: patient.gender || "L",
+          nik: null,
+          bpjs_number: null,
+          phone: "-",                   // placeholder untuk kolom NOT NULL
+          address: "Data belum diisi - Pasien Draft",
+          faskes: null,
+          date_of_birth: null,
+        })
+        .select("id")
+        .single();
+
+      if (anonError || !anonPatient) {
+        // Log detail error supaya bisa diagnosa
+        console.error("Error inserting anonymous patient:", {
+          message: anonError?.message,
+          code: anonError?.code,
+          details: anonError?.details,
+          hint: anonError?.hint,
+        });
+        return;
+      }
+      resolvedPatientId = anonPatient.id;
+    }
+
     // 1. Insert ke tabel visits
     const { data: visitData, error: visitError } = await supabase
       .from("visits")
       .insert({
-        patient_id: patient.id, // UUID dari tabel patients
+        patient_id: resolvedPatientId, // UUID valid dari tabel patients
         queue_number: patient.queueNumber,
         complaint: patient.complaint,
         duration_of_symptoms: patient.duration,
@@ -265,21 +362,44 @@ export function QueueProvider({ children }: { children: ReactNode }) {
     // 2. Insert vital_signs
     const { error: vsError } = await supabase.from("vital_signs").insert({
       visit_id: visitId,
-      blood_pressure: patient.vitalSigns.bloodPressure,
-      heart_rate: patient.vitalSigns.heartRate,
-      temperature: patient.vitalSigns.temperature,
-      oxygen_saturation: patient.vitalSigns.oxygenSaturation,
-      respiratory_rate: patient.vitalSigns.respiratoryRate,
+      blood_pressure: patient.vitalSigns.bloodPressure || null,
+      heart_rate: patient.vitalSigns.heartRate || null,
+      temperature: patient.vitalSigns.temperature || null,
+      oxygen_saturation: patient.vitalSigns.oxygenSaturation || null,
+      respiratory_rate: patient.vitalSigns.respiratoryRate || null,
     });
     if (vsError) console.error("Error inserting vital_signs:", vsError);
 
-    // 3. Insert triage_results
+    // 3. Insert triage_results with Meta Data packing
+    const metaData = {
+      esi_level: patient.triageResult.esi_level,
+      shap_features: patient.triageResult.shap_features,
+      reasoning_text: patient.triageResult.reasoning_text,
+      is_skip_triage: patient.triageResult.is_skip_triage,
+      tx_hash_initial: patient.tx_hash_initial,
+      tx_hash_final: patient.tx_hash_final,
+      blockchain_status: patient.blockchain_status,
+      vitalSignsExtra: {
+        gcstotal: patient.vitalSigns.gcstotal,
+        painScore: patient.vitalSigns.painScore,
+        mentalStatus: patient.vitalSigns.mentalStatus,
+        map: patient.vitalSigns.map,
+        shockIndex: patient.vitalSigns.shockIndex,
+        news2Score: patient.vitalSigns.news2Score,
+      }
+    };
+    
+    const reasoningWithMeta = [
+      ...(patient.triageResult.reasoning || []),
+      `__META__:${JSON.stringify(metaData)}`
+    ];
+
     const { error: trError } = await supabase.from("triage_results").insert({
       visit_id: visitId,
       priority: patient.triageResult.priority,
       priority_label: patient.triageResult.priorityLabel,
       confidence: patient.triageResult.confidence,
-      reasoning: patient.triageResult.reasoning,
+      reasoning: reasoningWithMeta,
       recommended_action: patient.triageResult.recommendedAction,
       estimated_wait_time: patient.triageResult.estimatedWaitTime,
     });
@@ -310,6 +430,45 @@ export function QueueProvider({ children }: { children: ReactNode }) {
       .update({ status })
       .eq("id", id);
     if (error) console.error("Error updating status:", error);
+    await fetchQueue();
+  };
+
+  // ── updatePatientTriage ──
+  const updatePatientTriage = async (
+    id: string,
+    updates: Partial<QueuePatient>
+  ): Promise<void> => {
+    const pt = patients.find(p => p.id === id);
+    if (!pt) return;
+    
+    // We update the triage_results reasoning field with the new meta
+    const metaData = {
+      esi_level: updates.triageResult?.esi_level ?? pt.triageResult.esi_level,
+      shap_features: updates.triageResult?.shap_features ?? pt.triageResult.shap_features,
+      reasoning_text: updates.triageResult?.reasoning_text ?? pt.triageResult.reasoning_text,
+      is_skip_triage: updates.triageResult?.is_skip_triage ?? pt.triageResult.is_skip_triage,
+      tx_hash_initial: updates.tx_hash_initial ?? pt.tx_hash_initial,
+      tx_hash_final: updates.tx_hash_final ?? pt.tx_hash_final,
+      blockchain_status: updates.blockchain_status ?? pt.blockchain_status,
+      vitalSignsExtra: {
+        gcstotal: pt.vitalSigns.gcstotal,
+        painScore: pt.vitalSigns.painScore,
+        mentalStatus: pt.vitalSigns.mentalStatus,
+        map: pt.vitalSigns.map,
+        shockIndex: pt.vitalSigns.shockIndex,
+        news2Score: pt.vitalSigns.news2Score,
+      }
+    };
+    
+    const baseReasoning = pt.triageResult.reasoning.filter(r => !r.startsWith('__META__:'));
+    const reasoningWithMeta = [...baseReasoning, `__META__:${JSON.stringify(metaData)}`];
+
+    const { error: trError } = await supabase
+      .from("triage_results")
+      .update({ reasoning: reasoningWithMeta })
+      .eq("visit_id", id);
+      
+    if (trError) console.error("Error updating triage_results meta:", trError);
     await fetchQueue();
   };
 
@@ -380,6 +539,32 @@ export function QueueProvider({ children }: { children: ReactNode }) {
     await fetchQueue();
   };
 
+  // ── updatePatientIdentity ──
+  const updatePatientIdentity = async (
+    visitId: string,
+    patientId: string,
+    updates: {
+      name: string;
+      date_of_birth?: string;
+      age?: number;
+      gender: "L" | "P";
+      nik?: string;
+      bpjs_number?: string;
+      phone: string;
+      address: string;
+    }
+  ): Promise<void> => {
+    const { error } = await supabase
+      .from("patients")
+      .update({
+        ...updates,
+      })
+      .eq("id", patientId);
+
+    if (error) console.error("Error updating patient identity:", error);
+    await fetchQueue();
+  };
+
   // ── Filter helpers (sync, dari state in-memory) ──
   const getPatientById = (id: string) => patients.find((p) => p.id === id);
 
@@ -421,9 +606,11 @@ export function QueueProvider({ children }: { children: ReactNode }) {
         isLoading,
         addPatient,
         updatePatientStatus,
+        updatePatientTriage,
         assignDoctor,
         addDiagnosisAndPrescription,
         updatePharmacyStatus,
+        updatePatientIdentity,
         getPatientById,
         getPatientsByStatus,
         getPatientsByPharmacyStatus,

@@ -2,30 +2,99 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   ClipboardList, CircleCheckBig, Clock3,
-  Stethoscope, Filter, UserPlus
+  Stethoscope, Filter, UserPlus, Link2, ChevronRight, Activity, Brain, Check,
+  AlertTriangle, Save
 } from 'lucide-react'
 import { useQueue } from '@/contexts/QueueContext'
+import { ESI_CONFIG } from '@/data/mock'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import type { QueuePatient, EsiLevel } from '@/types'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
 
 type StatusFilter = 'ALL' | 'WAITING' | 'IN_PROGRESS' | 'COMPLETED'
-type PriorityFilter = 'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+type PriorityFilter = 'ALL' | 1 | 2 | 3 | 4 | 5
 
 export default function AntrianAdmin() {
-  const { patients } = useQueue()
+  const { patients, updatePatientIdentity } = useQueue()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('ALL')
+  const [selectedPatient, setSelectedPatient] = useState<QueuePatient | null>(null)
+  
+  // Draft edit state
+  const [isEditingDraft, setIsEditingDraft] = useState(false)
+  const [draftData, setDraftData] = useState({
+    name: '',
+    gender: 'L' as 'L'|'P',
+    dob: '',
+    phone: '',
+    address: ''
+  })
+  const [isSubmittingDraft, setIsSubmittingDraft] = useState(false)
+
+  // Auto reset form when patient changes
+  if (selectedPatient && isEditingDraft && draftData.name === '' && draftData.phone === '') {
+    setDraftData({
+      name: (selectedPatient.name.startsWith('Pasien Kode') || selectedPatient.name.startsWith('Pasien Draft')) ? '' : selectedPatient.name,
+      gender: selectedPatient.gender,
+      dob: '',
+      phone: selectedPatient.phone === '-' ? '' : selectedPatient.phone,
+      address: selectedPatient.address.includes('belum diisi') ? '' : selectedPatient.address
+    })
+  }
+
+  const handleSaveDraft = async () => {
+    if (!selectedPatient || !selectedPatient.patientId) return
+    setIsSubmittingDraft(true)
+    try {
+      await updatePatientIdentity(selectedPatient.id, selectedPatient.patientId, {
+        name: draftData.name,
+        gender: draftData.gender,
+        date_of_birth: draftData.dob || undefined,
+        phone: draftData.phone,
+        address: draftData.address
+      })
+      // Update local selected state to remove banner
+      setSelectedPatient({...selectedPatient, isDraft: false, name: draftData.name})
+      setIsEditingDraft(false)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsSubmittingDraft(false)
+    }
+  }
 
   const filtered = patients.filter(p => {
     if (statusFilter !== 'ALL' && p.status !== statusFilter) return false
-    if (priorityFilter !== 'ALL' && p.triageResult.priority !== priorityFilter) return false
+    
+    const pEsi = p.triageResult.esi_level || 
+      (p.triageResult.priority === 'CRITICAL' ? 1 : 
+       p.triageResult.priority === 'HIGH' ? 2 : 
+       p.triageResult.priority === 'MEDIUM' ? 3 : 4)
+
+    if (priorityFilter !== 'ALL' && pEsi !== priorityFilter) return false
     return true
   }).sort((a, b) => {
-    const order = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 }
-    return order[a.triageResult.priority] - order[b.triageResult.priority]
+    const aEsi = a.triageResult.esi_level || 
+      (a.triageResult.priority === 'CRITICAL' ? 1 : a.triageResult.priority === 'HIGH' ? 2 : a.triageResult.priority === 'MEDIUM' ? 3 : 4)
+    const bEsi = b.triageResult.esi_level || 
+      (b.triageResult.priority === 'CRITICAL' ? 1 : b.triageResult.priority === 'HIGH' ? 2 : b.triageResult.priority === 'MEDIUM' ? 3 : 4)
+    return aEsi - bEsi
   })
 
   const stats = {
@@ -41,18 +110,11 @@ export default function AntrianAdmin() {
     return { label: 'Selesai', icon: CircleCheckBig, cls: 'bg-green-50 text-green-700 border-green-200' }
   }
 
-  const getPriorityBadge = (p: string) => {
-    if (p === 'CRITICAL') return 'bg-red-600 text-white'
-    if (p === 'HIGH') return 'bg-orange-500 text-white'
-    if (p === 'MEDIUM') return 'bg-yellow-500 text-white'
-    return 'bg-green-500 text-white'
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Antrian Pasien</h1>
+          <h1 className="text-2xl font-bold text-foreground">Antrian Pasien (Triase ESI)</h1>
           <p className="text-sm text-muted-foreground">{stats.waiting} menunggu · {stats.inProgress} diperiksa · {stats.completed} selesai</p>
         </div>
         <Link href="/admin/input-pasien">
@@ -96,19 +158,22 @@ export default function AntrianAdmin() {
             ))}
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {(['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as PriorityFilter[]).map(p => (
-              <button key={p} onClick={() => setPriorityFilter(p)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  priorityFilter === p
-                    ? p === 'ALL' ? 'bg-primary text-primary-foreground' :
-                      p === 'CRITICAL' ? 'bg-red-600 text-white' :
-                      p === 'HIGH' ? 'bg-orange-500 text-white' :
-                      p === 'MEDIUM' ? 'bg-yellow-500 text-white' : 'bg-green-500 text-white'
-                    : 'bg-background text-muted-foreground border border-input hover:border-accent'
-                }`}>
-                {p === 'ALL' ? 'Semua' : p === 'CRITICAL' ? 'Kritis' : p === 'HIGH' ? 'Tinggi' : p === 'MEDIUM' ? 'Sedang' : 'Rendah'}
-              </button>
-            ))}
+            <button onClick={() => setPriorityFilter('ALL')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${priorityFilter === 'ALL' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground border border-input'}`}>
+              Semua ESI
+            </button>
+            {([1, 2, 3, 4, 5] as EsiLevel[]).map(esi => {
+              const cfg = ESI_CONFIG[esi]
+              return (
+                <button key={esi} onClick={() => setPriorityFilter(esi)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    priorityFilter === esi
+                      ? `${cfg.badge} border-transparent text-white`
+                      : 'bg-background text-muted-foreground border border-input hover:border-accent'
+                  }`}>
+                  ESI {esi}
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -118,43 +183,47 @@ export default function AntrianAdmin() {
         {filtered.map((patient) => {
           const statusCfg = getStatusLabel(patient.status)
           const StatusIcon = statusCfg.icon
+          const pEsi = patient.triageResult.esi_level || 
+            (patient.triageResult.priority === 'CRITICAL' ? 1 : patient.triageResult.priority === 'HIGH' ? 2 : patient.triageResult.priority === 'MEDIUM' ? 3 : 4)
+          const cfg = ESI_CONFIG[pEsi as EsiLevel]
+
           return (
-            <Card key={patient.id} className={`border shadow-sm hover:shadow-md transition-shadow ${
-              patient.triageResult.priority === 'CRITICAL' ? 'border-red-200 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/20' :
-              patient.triageResult.priority === 'HIGH' ? 'border-orange-200 dark:border-orange-900/50 bg-orange-50/30 dark:bg-orange-950/20' :
-              'border-border bg-card'
-            }`}>
+            <Card key={patient.id} 
+                  onClick={() => setSelectedPatient(patient)}
+                  className={`border shadow-sm hover:shadow-md transition-shadow cursor-pointer ${cfg.bgLight} border-${cfg.color.replace('bg-', '')}/30`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold text-white ${
-                    patient.triageResult.priority === 'CRITICAL' ? 'bg-red-600' :
-                    patient.triageResult.priority === 'HIGH' ? 'bg-orange-500' :
-                    patient.triageResult.priority === 'MEDIUM' ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold text-white ${cfg.badge}`}>
                     {patient.queueNumber}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <h3 className="font-semibold text-card-foreground">{patient.name}</h3>
                       <span className="text-xs text-muted-foreground">{patient.age}th · {patient.gender === 'L' ? 'L' : 'P'}</span>
-                      <Badge className={`${getPriorityBadge(patient.triageResult.priority)} text-xs`}>
-                        {patient.triageResult.priorityLabel}
+                      <Badge className={`${cfg.badge} text-xs border-transparent`}>
+                        ESI {pEsi}
                       </Badge>
                       <Badge variant="outline" className={`text-xs ${statusCfg.cls}`}>
                         <StatusIcon className="w-3 h-3 mr-1" />{statusCfg.label}
                       </Badge>
+                      {patient.tx_hash_initial && (
+                        <Badge variant="outline" className="text-xs bg-slate-100 text-slate-600 border-slate-200 gap-1">
+                          <Link2 className="w-3 h-3" /> Initial Log
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground truncate">{patient.complaint}</p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span>BP: {patient.vitalSigns.bloodPressure}</span>
-                      <span>HR: {patient.vitalSigns.heartRate}</span>
-                      <span>SpO2: {patient.vitalSigns.oxygenSaturation}%</span>
-                      <span>Suhu: {patient.vitalSigns.temperature}°C</span>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-medium">
+                      <span>BP: {patient.vitalSigns.bloodPressure || '-'}</span>
+                      <span>HR: {patient.vitalSigns.heartRate || '-'}</span>
+                      <span>SpO2: {patient.vitalSigns.oxygenSaturation || '-'}%</span>
+                      {patient.vitalSigns.news2Score !== undefined && (
+                        <span className="text-blue-600 dark:text-blue-400">NEWS2: {patient.vitalSigns.news2Score}</span>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right text-xs text-muted-foreground hidden sm:block">
-                    <p>AI: {(patient.triageResult.confidence * 100).toFixed(0)}%</p>
-                    {patient.doctorName && <p className="mt-1 text-blue-600">{patient.doctorName}</p>}
+                  <div className="text-right text-xs text-muted-foreground hidden sm:flex flex-col items-end justify-center">
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
               </CardContent>
@@ -168,6 +237,207 @@ export default function AntrianAdmin() {
           </div>
         )}
       </div>
+
+      {/* Detail Drawer */}
+      <Drawer open={!!selectedPatient} onOpenChange={(open) => !open && setSelectedPatient(null)}>
+        <DrawerContent className="h-[85vh]">
+          {selectedPatient && (() => {
+            const esi = selectedPatient.triageResult.esi_level || 4
+            const cfg = ESI_CONFIG[esi as EsiLevel]
+            return (
+              <div className="mx-auto w-full max-w-4xl h-full flex flex-col">
+                <DrawerHeader className="border-b border-border pb-4 flex-shrink-0">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <DrawerTitle className="text-2xl font-bold flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg text-white ${cfg.badge} flex items-center justify-center text-sm font-bold`}>
+                          {selectedPatient.queueNumber}
+                        </div>
+                        {selectedPatient.name}
+                      </DrawerTitle>
+                      <DrawerDescription className="mt-1 flex items-center gap-2">
+                        {selectedPatient.age} Tahun · {selectedPatient.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
+                      </DrawerDescription>
+                    </div>
+                    <Badge className={`${cfg.badge} text-lg px-4 py-1`}>
+                      ESI {esi} - {cfg.label}
+                    </Badge>
+                  </div>
+                </DrawerHeader>
+
+                <div className="p-4 overflow-y-auto flex-1 bg-muted/30">
+                  {selectedPatient.isDraft && !isEditingDraft && (
+                    <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <AlertTriangle className="w-5 h-5 text-red-600" />
+                        <div>
+                          <p className="font-semibold text-red-800">Data Identitas Belum Lengkap</p>
+                          <p className="text-sm text-red-600">Pasien ini menggunakan jalur bypass. Mohon lengkapi identitasnya.</p>
+                        </div>
+                      </div>
+                      <Button onClick={() => setIsEditingDraft(true)} className="bg-red-600 hover:bg-red-700 w-full sm:w-auto">
+                        Lengkapi Data Identitas
+                      </Button>
+                    </div>
+                  )}
+
+                  {isEditingDraft ? (
+                    <Card className="max-w-2xl mx-auto border-red-200">
+                      <CardHeader className="bg-red-50/50 border-b border-red-100 pb-4">
+                        <CardTitle className="text-red-700 text-lg flex items-center gap-2">
+                          <UserPlus className="w-5 h-5" /> Lengkapi Data Identitas Pasien
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-6 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2 col-span-2 sm:col-span-1">
+                            <Label>Nama Lengkap *</Label>
+                            <Input value={draftData.name} onChange={e => setDraftData({...draftData, name: e.target.value})} placeholder="Nama Pasien" />
+                          </div>
+                          <div className="space-y-2 col-span-2 sm:col-span-1">
+                            <Label>Tanggal Lahir *</Label>
+                            <Input type="date" value={draftData.dob} onChange={e => setDraftData({...draftData, dob: e.target.value})} />
+                          </div>
+                          <div className="space-y-2 col-span-2 sm:col-span-1">
+                            <Label>No Telepon *</Label>
+                            <Input value={draftData.phone} onChange={e => setDraftData({...draftData, phone: e.target.value})} placeholder="08..." />
+                          </div>
+                          <div className="space-y-2 col-span-2 sm:col-span-1">
+                            <Label>Jenis Kelamin</Label>
+                            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" value={draftData.gender} onChange={e => setDraftData({...draftData, gender: e.target.value as 'L'|'P'})}>
+                              <option value="L">Laki-laki</option>
+                              <option value="P">Perempuan</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2 col-span-2">
+                            <Label>Alamat Lengkap *</Label>
+                            <Textarea value={draftData.address} onChange={e => setDraftData({...draftData, address: e.target.value})} placeholder="Alamat lengkap..." rows={2} />
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
+                          <Button variant="outline" onClick={() => setIsEditingDraft(false)}>Batal</Button>
+                          <Button onClick={handleSaveDraft} disabled={isSubmittingDraft || !draftData.name || !draftData.dob || !draftData.phone || !draftData.address} className="bg-red-600 hover:bg-red-700">
+                            {isSubmittingDraft ? 'Menyimpan...' : 'Simpan Data Pasien'}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid md:grid-cols-2 gap-6">
+                    {/* Left Column */}
+                    <div className="space-y-6">
+                      {/* Clinical Data */}
+                      <Card>
+                        <CardHeader className="pb-3 border-b">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Activity className="w-4 h-4 text-rose-500" /> Data Klinis Awal
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 space-y-4">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Keluhan Utama</p>
+                            <p className="text-sm font-medium">{selectedPatient.complaint}</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
+                            <div><p className="text-xs text-muted-foreground">Tekanan Darah</p><p className="font-semibold">{selectedPatient.vitalSigns.bloodPressure || '-'}</p></div>
+                            <div><p className="text-xs text-muted-foreground">Denyut Jantung</p><p className="font-semibold">{selectedPatient.vitalSigns.heartRate || '-'} bpm</p></div>
+                            <div><p className="text-xs text-muted-foreground">SpO2</p><p className="font-semibold">{selectedPatient.vitalSigns.oxygenSaturation || '-'}%</p></div>
+                            <div><p className="text-xs text-muted-foreground">Frek. Napas</p><p className="font-semibold">{selectedPatient.vitalSigns.respiratoryRate || '-'} x/m</p></div>
+                            <div><p className="text-xs text-muted-foreground">Suhu</p><p className="font-semibold">{selectedPatient.vitalSigns.temperature || '-'}</p></div>
+                            <div><p className="text-xs text-muted-foreground">GCS</p><p className="font-semibold">{selectedPatient.vitalSigns.gcstotal || '-'}</p></div>
+                          </div>
+                          
+                          <div className="bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-xl border border-blue-100 dark:border-blue-900 grid grid-cols-3 text-center">
+                            <div><p className="text-xs text-blue-600/70">MAP</p><p className="font-bold text-blue-700 dark:text-blue-400">{selectedPatient.vitalSigns.map || '-'}</p></div>
+                            <div><p className="text-xs text-blue-600/70">Shock Index</p><p className="font-bold text-blue-700 dark:text-blue-400">{selectedPatient.vitalSigns.shockIndex || '-'}</p></div>
+                            <div><p className="text-xs text-blue-600/70">NEWS2</p><p className="font-bold text-blue-700 dark:text-blue-400">{selectedPatient.vitalSigns.news2Score ?? '-'}</p></div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Blockchain Logs */}
+                      <Card>
+                        <CardHeader className="pb-3 border-b">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Link2 className="w-4 h-4 text-slate-500" /> Dual-Log Blockchain
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 space-y-4">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                              <Check className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold">Initial Log (AI Triage)</p>
+                              <p className="text-xs text-muted-foreground font-mono truncate bg-muted p-1 mt-1 rounded">
+                                {selectedPatient.tx_hash_initial || 'Menunggu pencatatan...'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${selectedPatient.tx_hash_final ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+                              {selectedPatient.tx_hash_final ? 
+                                <Check className="w-4 h-4 text-emerald-600" /> : 
+                                <Clock3 className="w-4 h-4 text-slate-400" />
+                              }
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-foreground/80">Final Log (Doctor Confirmed)</p>
+                              <p className="text-xs text-muted-foreground font-mono truncate bg-muted p-1 mt-1 rounded">
+                                {selectedPatient.tx_hash_final || 'Belum dikonfirmasi dokter'}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="space-y-6">
+                      {/* AI Reasoning */}
+                      <Card className="h-full flex flex-col">
+                        <CardHeader className="pb-3 border-b">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Brain className="w-4 h-4 text-violet-500" /> AI Interpretability
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 flex-1 flex flex-col">
+                          <p className="text-sm leading-relaxed mb-4">
+                            {selectedPatient.triageResult.reasoning_text || 
+                              selectedPatient.triageResult.reasoning.join('. ')}
+                          </p>
+                          
+                          {selectedPatient.triageResult.shap_features && selectedPatient.triageResult.shap_features.length > 0 && (
+                            <div className="flex-1 min-h-[200px] border border-border rounded-xl p-3 bg-card mt-auto">
+                              <p className="text-xs font-semibold text-center mb-2 text-muted-foreground">Fitur Penentu ESI</p>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                  data={selectedPatient.triageResult.shap_features.map(f => ({ name: f.label, value: Math.abs(f.shap_value), isNeg: f.shap_value < 0 }))}
+                                  layout="vertical" margin={{ left: 10, right: 10, top: 0, bottom: 0 }}
+                                >
+                                  <XAxis type="number" hide />
+                                  <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 10 }} />
+                                  <Tooltip formatter={(v: number) => [v.toFixed(2), 'Impact']} />
+                                  <Bar dataKey="value" radius={4}>
+                                    {selectedPatient.triageResult.shap_features.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={entry.shap_value < 0 ? '#ef4444' : '#f59e0b'} />
+                                    ))}
+                                  </Bar>
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
+        </DrawerContent>
+      </Drawer>
     </div>
   )
 }

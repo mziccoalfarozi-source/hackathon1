@@ -49,7 +49,7 @@ export default function DashboardLayout({ role, navItems, accentColor, accentBg,
   return (
     <div className="min-h-screen bg-background flex flex-col transition-colors duration-300">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-card/90 backdrop-blur-sm transition-colors duration-300 shadow-sm dark:shadow-none">
+      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-card/60 backdrop-blur-lg transition-colors duration-300 shadow-sm dark:shadow-none">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
 

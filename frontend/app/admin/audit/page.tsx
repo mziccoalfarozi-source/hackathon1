@@ -8,25 +8,58 @@ import { Input } from '@/components/ui/input'
 import {
   ShieldCheck, ExternalLink, Search, CircleCheckBig,
   AlertTriangle, Zap, Clock, Check, Lock, Database, FileCheck,
-  Copy, CheckCheck
+  Copy, CheckCheck, Link2, Stethoscope, ChevronDown, ChevronUp
 } from 'lucide-react'
-import { AUDIT_RECORDS } from '@/data/mock'
+import { AUDIT_RECORDS, ESI_CONFIG } from '@/data/mock'
+import { useQueue } from '@/contexts/QueueContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { StaggerContainer, StaggerItem, SlideUp } from '@/components/motion'
+import { StaggerContainer, StaggerItem } from '@/components/motion'
+import type { AuditRecord, EsiLevel } from '@/types'
 
-type PriorityFilter = 'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+type PriorityFilter = 'ALL' | 1 | 2 | 3 | 4 | 5
 
 export default function AuditTrail() {
-  const [records] = useState(AUDIT_RECORDS)
+  const { patients } = useQueue();
+  
+  // Combine mock historical records and current dynamic patients for audit view
+  const combinedRecords: AuditRecord[] = [
+    ...patients.filter(p => p.tx_hash_initial).map(p => ({
+      id: `AUDIT-${p.id}`,
+      patientName: p.name,
+      timestamp: p.timestamp,
+      action: 'AI Triage & Doctor Exam',
+      triagePriority: p.triageResult.priority,
+      txHash: p.tx_hash_initial || '',
+      blockNumber: 1245000 + Math.floor(Math.random()*100),
+      verified: !!p.tx_hash_final,
+      details: p.complaint,
+      esi_level: p.triageResult.esi_level,
+      tx_hash_initial: p.tx_hash_initial,
+      tx_hash_final: p.tx_hash_final,
+      block_number_initial: 1245000,
+      block_number_final: p.tx_hash_final ? 1245050 : undefined,
+      diubah_dokter: p.triageResult.esi_level !== p.triageFormInput?.gcs_total ? false : false // mock
+    })),
+    ...AUDIT_RECORDS.map(r => ({
+      ...r,
+      esi_level: (r.triagePriority === 'CRITICAL' ? 1 : r.triagePriority === 'HIGH' ? 2 : r.triagePriority === 'MEDIUM' ? 3 : 4) as EsiLevel,
+      tx_hash_initial: r.tx_hash_initial || r.txHash,
+      tx_hash_final: r.tx_hash_final || (r.verified ? '0x' + Math.random().toString(16).slice(2, 64) : undefined),
+      block_number_initial: r.blockNumber,
+      block_number_final: r.verified ? r.blockNumber + 50 : undefined
+    }))
+  ];
+
+  const [records] = useState<AuditRecord[]>(combinedRecords.sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime()))
   const [search, setSearch] = useState('')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('ALL')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [copiedHash, setCopiedHash] = useState<string | null>(null)
 
   const filteredRecords = records.filter(r => {
-    if (priorityFilter !== 'ALL' && r.triagePriority !== priorityFilter) return false
+    if (priorityFilter !== 'ALL' && r.esi_level !== priorityFilter) return false
     if (search && !r.patientName.toLowerCase().includes(search.toLowerCase()) &&
-        !r.txHash.toLowerCase().includes(search.toLowerCase())) return false
+        !r.tx_hash_initial?.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
 
@@ -36,57 +69,28 @@ export default function AuditTrail() {
     setTimeout(() => setCopiedHash(null), 2000)
   }
 
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'CRITICAL': return 'bg-red-600 text-white'
-      case 'HIGH': return 'bg-orange-500 text-white'
-      case 'MEDIUM': return 'bg-yellow-500 text-white'
-      default: return 'bg-green-500 text-white'
-    }
-  }
-
-  const getPriorityLabel = (priority: string) => {
-    switch (priority) {
-      case 'CRITICAL': return 'KRITIS'
-      case 'HIGH': return 'TINGGI'
-      case 'MEDIUM': return 'SEDANG'
-      default: return 'RENDAH'
-    }
-  }
-
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case 'CRITICAL': return AlertTriangle
-      case 'HIGH': return Zap
-      case 'MEDIUM': return Clock
-      default: return Check
-    }
-  }
-
-  const truncateHash = (hash: string, start = 10, end = 8) => {
+  const truncateHash = (hash: string, start = 8, end = 6) => {
+    if(!hash) return '';
     return `${hash.slice(0, start)}...${hash.slice(-end)}`
   }
 
   const formatTime = (date: Date) => {
     const d = new Date(date)
     return d.toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
     })
   }
 
   const stats = {
     total: records.length,
-    verified: records.filter(r => r.verified).length,
-    critical: records.filter(r => r.triagePriority === 'CRITICAL').length,
-    lastBlock: Math.max(...records.map(r => r.blockNumber)),
+    verified: records.filter(r => r.tx_hash_final).length,
+    critical: records.filter(r => r.esi_level === 1).length,
+    lastBlock: Math.max(...records.map(r => r.block_number_final || r.block_number_initial || 0)),
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       {/* Hero with Blockchain BG */}
       <div className="relative rounded-2xl overflow-hidden mb-8 h-48 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-900 dark:via-slate-800 dark:to-emerald-950 flex items-center border border-emerald-100 dark:border-none shadow-sm dark:shadow-none">
         <div className="absolute inset-0 opacity-30 dark:opacity-10">
@@ -99,22 +103,16 @@ export default function AuditTrail() {
               <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Audit Trail Blockchain</h1>
-              <p className="text-sm text-slate-600 dark:text-slate-400">Rekam medis tercatat immutable di Polygon</p>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dual-Log Blockchain Audit</h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Rekam Initial Triage AI & Final Konfirmasi Dokter (Immutable di Polygon)</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3 mt-3">
-            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-400/30 dark:hover:bg-emerald-500/30 gap-1.5 shadow-none">
-              <CircleCheckBig className="w-3 h-3" />
-              Jaringan: Polygon Amoy Testnet
+            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 shadow-none">
+              <CircleCheckBig className="w-3 h-3 mr-1" /> Polygon Amoy Testnet
             </Badge>
-            <Badge className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-400/30 dark:hover:bg-blue-500/30 gap-1.5 shadow-none">
-              <Database className="w-3 h-3" />
-              Block Terakhir: {stats.lastBlock.toLocaleString()}
-            </Badge>
-            <Badge className="bg-violet-100 text-violet-700 border-violet-200 hover:bg-violet-200 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-400/30 dark:hover:bg-violet-500/30 gap-1.5 shadow-none">
-              <Lock className="w-3 h-3" />
-              {stats.verified}/{stats.total} Terverifikasi
+            <Badge className="bg-blue-100 text-blue-700 border-blue-200 shadow-none">
+              <Database className="w-3 h-3 mr-1" /> Block Terakhir: {stats.lastBlock.toLocaleString()}
             </Badge>
           </div>
         </div>
@@ -123,22 +121,22 @@ export default function AuditTrail() {
       {/* Stats Cards */}
       <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Transaksi', value: stats.total, icon: FileCheck, color: 'bg-white dark:bg-card border border-slate-200 dark:border-border', iconColor: 'text-primary', iconBg: 'bg-primary/10 dark:bg-primary/20' },
-          { label: 'Terverifikasi', value: stats.verified, icon: CircleCheckBig, color: 'bg-white dark:bg-card border border-slate-200 dark:border-border', iconColor: 'text-emerald-600 dark:text-emerald-400', iconBg: 'bg-emerald-100 dark:bg-emerald-500/20' },
-          { label: 'Kritis', value: stats.critical, icon: AlertTriangle, color: 'bg-white dark:bg-card border border-slate-200 dark:border-border', iconColor: 'text-red-600 dark:text-red-400', iconBg: 'bg-red-100 dark:bg-red-500/20' },
-          { label: 'Block Height', value: stats.lastBlock.toLocaleString(), icon: Database, color: 'bg-white dark:bg-card border border-slate-200 dark:border-border', iconColor: 'text-blue-600 dark:text-blue-400', iconBg: 'bg-blue-100 dark:bg-blue-500/20' },
+          { label: 'Total Log Initial', value: stats.total, icon: FileCheck, color: 'text-primary', bg: 'bg-primary/10' },
+          { label: 'Final Log (Terverifikasi)', value: stats.verified, icon: CircleCheckBig, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+          { label: 'Pasien Kritis (ESI 1)', value: stats.critical, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100' },
+          { label: 'Pending Final Log', value: stats.total - stats.verified, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-100' },
         ].map((stat, i) => {
           const Icon = stat.icon
           return (
             <StaggerItem key={i}>
-              <div className={`rounded-xl p-5 ${stat.color} transition-all duration-300 hover:scale-[1.02] hover:shadow-md dark:hover:shadow-none shadow-sm dark:shadow-none`}>
+              <div className="rounded-xl p-5 bg-card border border-border transition-all duration-300 hover:shadow-md">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.iconBg}`}>
-                    <Icon className={`w-4 h-4 ${stat.iconColor}`} />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.bg}`}>
+                    <Icon className={`w-4 h-4 ${stat.color}`} />
                   </div>
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{stat.label}</span>
+                  <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
                 </div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
+                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
               </div>
             </StaggerItem>
           )
@@ -147,135 +145,108 @@ export default function AuditTrail() {
 
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
-        <div className="relative flex-1 w-full">
+        <div className="relative flex-1 w-full max-w-md">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Cari nama pasien atau tx hash..."
+            placeholder="Cari nama pasien atau hash..."
             className="pl-9 h-10"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
-          {(['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as PriorityFilter[]).map(p => (
-            <button
-              key={p}
-              onClick={() => setPriorityFilter(p)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                priorityFilter === p
-                  ? p === 'ALL' ? 'bg-primary text-primary-foreground' :
-                    p === 'CRITICAL' ? 'bg-red-600 text-white' :
-                    p === 'HIGH' ? 'bg-orange-500 text-white' :
-                    p === 'MEDIUM' ? 'bg-yellow-500 text-white' :
-                    'bg-green-500 text-white'
-                  : 'bg-background text-muted-foreground border border-input hover:border-accent'
-              }`}
-            >
-              {p === 'ALL' ? 'Semua' : getPriorityLabel(p)}
-            </button>
-          ))}
+          <button onClick={() => setPriorityFilter('ALL')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${priorityFilter === 'ALL' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground border border-input'}`}>
+            Semua ESI
+          </button>
+          {([1, 2, 3, 4, 5] as EsiLevel[]).map(esi => {
+            const cfg = ESI_CONFIG[esi]
+            return (
+              <button key={esi} onClick={() => setPriorityFilter(esi)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  priorityFilter === esi ? `${cfg.badge} border-transparent text-white` : 'bg-background text-muted-foreground border border-input'
+                }`}>
+                ESI {esi}
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* Records Table */}
       <Card className="border-border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm text-left">
             <thead className="bg-muted text-muted-foreground">
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 font-semibold">Waktu</th>
-                <th className="text-left py-3 px-4 font-semibold">Pasien</th>
-                <th className="text-left py-3 px-4 font-semibold">Aksi</th>
-                <th className="text-left py-3 px-4 font-semibold">Prioritas</th>
-                <th className="text-left py-3 px-4 font-semibold">Transaction Hash</th>
-                <th className="text-left py-3 px-4 font-semibold">Block</th>
-                <th className="text-left py-3 px-4 font-semibold">Status</th>
-                <th className="text-left py-3 px-4 font-semibold">Aksi</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap">Waktu (Initial Log)</th>
+                <th className="py-3 px-4 font-semibold">Pasien</th>
+                <th className="py-3 px-4 font-semibold">ESI</th>
+                <th className="py-3 px-4 font-semibold">Initial Log (AI)</th>
+                <th className="py-3 px-4 font-semibold">Final Log (Dokter)</th>
+                <th className="py-3 px-4 font-semibold">Status Dual-Log</th>
+                <th className="py-3 px-4 font-semibold text-center">Detail</th>
               </tr>
             </thead>
             <tbody>
               <AnimatePresence>
                 {filteredRecords.map((record, i) => {
-                  const PriorityIcon = getPriorityIcon(record.triagePriority)
                   const isExpanded = expandedId === record.id
+                  const esiCfg = ESI_CONFIG[record.esi_level as EsiLevel || 4]
 
                   return (
                     <React.Fragment key={record.id}>
                       <motion.tr
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${
-                          isExpanded ? 'bg-muted/50' : ''
-                        }`}
+                        className={`border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${isExpanded ? 'bg-muted/50' : ''}`}
                         onClick={() => setExpandedId(isExpanded ? null : record.id)}
                       >
                         <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">
                           {formatTime(record.timestamp)}
                         </td>
-                        <td className="py-3 px-4 font-medium text-card-foreground">
+                        <td className="py-3 px-4 font-medium text-foreground">
                           {record.patientName}
                         </td>
                         <td className="py-3 px-4">
-                          <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50">
-                            {record.action}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge className={`${getPriorityBadge(record.triagePriority)} text-xs gap-1`}>
-                            <PriorityIcon className="w-3 h-3" />
-                            {getPriorityLabel(record.triagePriority)}
+                          <Badge className={`${esiCfg.badge} text-[10px] border-transparent text-white px-2 py-0.5`}>
+                            ESI {record.esi_level}
                           </Badge>
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                              {truncateHash(record.txHash)}
+                            <Link2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                            <code className="text-[11px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
+                              {truncateHash(record.tx_hash_initial || '')}
                             </code>
-                            <button
-                              onClick={e => {
-                                e.stopPropagation()
-                                copyToClipboard(record.txHash, record.id)
-                              }}
-                              className="text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              {copiedHash === record.id ?
-                                <CheckCheck className="w-3.5 h-3.5 text-emerald-500" /> :
-                                <Copy className="w-3.5 h-3.5" />
-                              }
-                            </button>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-muted-foreground font-mono text-xs">
-                          {record.blockNumber.toLocaleString()}
-                        </td>
                         <td className="py-3 px-4">
-                          {record.verified ? (
-                            <div className="flex items-center gap-1.5 text-emerald-600">
-                              <CircleCheckBig className="w-4 h-4" />
-                              <span className="text-xs font-medium">Terverifikasi</span>
+                          {record.tx_hash_final ? (
+                            <div className="flex items-center gap-2">
+                              <Stethoscope className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                              <code className="text-[11px] font-mono text-muted-foreground bg-emerald-50 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded border border-emerald-100 dark:border-emerald-900/50">
+                                {truncateHash(record.tx_hash_final)}
+                              </code>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1.5 text-amber-600">
-                              <Clock className="w-4 h-4" />
-                              <span className="text-xs font-medium">Pending</span>
-                            </div>
+                            <span className="text-xs text-muted-foreground italic flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> Menunggu...
+                            </span>
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1.5 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                            onClick={e => {
-                              e.stopPropagation()
-                              window.open(`https://amoy.polygonscan.com/tx/${record.txHash}`, '_blank')
-                            }}
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            Explorer
-                          </Button>
+                          {record.tx_hash_final ? (
+                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                              <Check className="w-3 h-3 mr-1" /> Terverifikasi
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                              <Clock className="w-3 h-3 mr-1" /> Pending Konfirmasi
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {isExpanded ? <ChevronUp className="w-4 h-4 mx-auto text-muted-foreground" /> : <ChevronDown className="w-4 h-4 mx-auto text-muted-foreground" />}
                         </td>
                       </motion.tr>
 
@@ -283,102 +254,82 @@ export default function AuditTrail() {
                       <AnimatePresence>
                         {isExpanded && (
                           <motion.tr
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="bg-muted/30 border-b border-border"
+                            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                            className="bg-muted/20 border-b border-border shadow-inner"
                           >
-                            <td colSpan={8} className="py-4 px-4">
-                              <div className="grid md:grid-cols-2 gap-4">
-                                <div>
-                                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Detail Transaksi</h4>
-                                  <div className="bg-background rounded-lg p-3 border border-border space-y-2 text-xs">
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">ID Audit</span>
-                                      <span className="font-mono text-card-foreground">{record.id}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Waktu Blockchain</span>
-                                      <span className="text-card-foreground">{formatTime(record.timestamp)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Block Number</span>
-                                      <span className="font-mono text-card-foreground">{record.blockNumber.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Konfirmasi</span>
-                                      <span className="text-emerald-600 font-medium">12 block confirmations</span>
-                                    </div>
+                            <td colSpan={7} className="p-0">
+                              <div className="p-4 grid md:grid-cols-2 gap-6">
+                                
+                                {/* Initial Log */}
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2 text-sm font-semibold text-blue-700 dark:text-blue-400">
+                                    <div className="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">1</div>
+                                    Tahap 1: Initial Log (AI Triage)
                                   </div>
-                                </div>
-                                <div>
-                                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Detail Triage</h4>
-                                  <div className="bg-background rounded-lg p-3 border border-border space-y-2 text-xs">
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Pasien</span>
-                                      <span className="font-medium text-card-foreground">{record.patientName}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Prioritas AI</span>
-                                      <Badge className={`${getPriorityBadge(record.triagePriority)} text-[10px]`}>
-                                        {getPriorityLabel(record.triagePriority)}
-                                      </Badge>
-                                    </div>
+                                  <div className="bg-background rounded-lg p-3 border border-border text-xs space-y-2">
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Block Number</span><span className="font-mono">{record.block_number_initial?.toLocaleString() || '-'}</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Prediksi ESI</span><Badge className={`${esiCfg.badge} text-[10px]`}>ESI {record.esi_level}</Badge></div>
                                     <div>
-                                      <span className="text-muted-foreground block mb-1">Catatan:</span>
-                                      <p className="text-card-foreground leading-relaxed">{record.details}</p>
+                                      <span className="text-muted-foreground block mb-1">Tx Hash:</span>
+                                      <div className="flex items-center gap-2">
+                                        <code className="text-[10px] font-mono text-muted-foreground bg-muted p-1 rounded block w-full break-all">{record.tx_hash_initial}</code>
+                                        <button onClick={() => copyToClipboard(record.tx_hash_initial||'', record.id+'1')} className="p-1 hover:text-foreground">
+                                          {copiedHash === record.id+'1' ? <CheckCheck className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                        </button>
+                                      </div>
                                     </div>
+                                    <Button size="sm" variant="outline" className="w-full text-[10px] h-7 mt-2" onClick={() => window.open(`https://amoy.polygonscan.com/tx/${record.tx_hash_initial}`, '_blank')}>
+                                      <ExternalLink className="w-3 h-3 mr-1" /> Polygonscan
+                                    </Button>
                                   </div>
                                 </div>
-                              </div>
 
-                              {/* Full Hash */}
-                              <div className="mt-3">
-                                <h4 className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Transaction Hash Lengkap</h4>
-                                <div className="flex items-center gap-2 bg-background rounded-lg p-2.5 border border-border">
-                                  <code className="text-xs font-mono text-muted-foreground flex-1 break-all">{record.txHash}</code>
-                                  <button
-                                    onClick={() => copyToClipboard(record.txHash, record.id + '_full')}
-                                    className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-                                  >
-                                    {copiedHash === record.id + '_full' ?
-                                      <CheckCheck className="w-4 h-4 text-emerald-500" /> :
-                                      <Copy className="w-4 h-4" />
-                                    }
-                                  </button>
+                                {/* Final Log */}
+                                <div className="space-y-3">
+                                  <div className={`flex items-center gap-2 text-sm font-semibold ${record.tx_hash_final ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'}`}>
+                                    <div className={`w-6 h-6 rounded flex items-center justify-center ${record.tx_hash_final ? 'bg-emerald-100 dark:bg-emerald-900/50' : 'bg-slate-200 dark:bg-slate-800'}`}>2</div>
+                                    Tahap 2: Final Log (Konfirmasi Dokter)
+                                  </div>
+                                  
+                                  {record.tx_hash_final ? (
+                                    <div className="bg-background rounded-lg p-3 border border-border text-xs space-y-2 relative overflow-hidden">
+                                      {record.diubah_dokter && (
+                                        <div className="absolute top-0 right-0 bg-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-bl font-bold">
+                                          Diubah Dokter
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between"><span className="text-muted-foreground">Block Number</span><span className="font-mono">{record.block_number_final?.toLocaleString()}</span></div>
+                                      <div className="flex justify-between"><span className="text-muted-foreground">Final ESI</span><Badge className={`${esiCfg.badge} text-[10px]`}>ESI {record.esi_level}</Badge></div>
+                                      <div>
+                                        <span className="text-muted-foreground block mb-1">Tx Hash:</span>
+                                        <div className="flex items-center gap-2">
+                                          <code className="text-[10px] font-mono text-muted-foreground bg-muted p-1 rounded block w-full break-all">{record.tx_hash_final}</code>
+                                          <button onClick={() => copyToClipboard(record.tx_hash_final||'', record.id+'2')} className="p-1 hover:text-foreground">
+                                            {copiedHash === record.id+'2' ? <CheckCheck className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <Button size="sm" variant="outline" className="w-full text-[10px] h-7 mt-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50" onClick={() => window.open(`https://amoy.polygonscan.com/tx/${record.tx_hash_final}`, '_blank')}>
+                                        <ExternalLink className="w-3 h-3 mr-1" /> Polygonscan
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="bg-background/50 rounded-lg p-4 border border-dashed border-border text-center flex flex-col items-center justify-center h-[140px]">
+                                      <Clock className="w-6 h-6 text-muted-foreground mb-2 opacity-50" />
+                                      <p className="text-xs text-muted-foreground">Menunggu konfirmasi dokter</p>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-
-                              {/* Polygon Explorer Link */}
-                              <div className="mt-3 flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
-                                  onClick={() => window.open(`https://amoy.polygonscan.com/tx/${record.txHash}`, '_blank')}
-                                >
-                                  <ExternalLink className="w-4 h-4" />
-                                  Lihat di Polygon Explorer
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="gap-2"
-                                  onClick={() => window.open(`https://amoy.polygonscan.com/block/${record.blockNumber}`, '_blank')}
-                                >
-                                  <Database className="w-4 h-4" />
-                                  Lihat Block
-                                </Button>
+                                
                               </div>
                             </td>
                           </motion.tr>
                         )}
-
-                    </AnimatePresence>
-                  </React.Fragment>
-                )
-              })}
-            </AnimatePresence>
+                      </AnimatePresence>
+                    </React.Fragment>
+                  )
+                })}
+              </AnimatePresence>
             </tbody>
           </table>
         </div>
@@ -387,63 +338,8 @@ export default function AuditTrail() {
           <div className="text-center py-12">
             <ShieldCheck className="w-12 h-12 text-muted mx-auto mb-3" />
             <p className="text-muted-foreground font-medium">Tidak ada data audit</p>
-            <p className="text-sm text-muted-foreground mt-1">Ubah filter atau lakukan pencarian lain</p>
           </div>
         )}
-      </Card>
-
-      {/* How Blockchain Audit Works */}
-      <Card className="mt-6 border-border shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Lock className="w-5 h-5 text-emerald-600" />
-            Bagaimana Audit Trail Blockchain Bekerja
-          </CardTitle>
-          <CardDescription>
-            Setiap keputusan triase dicatat secara immutable di blockchain Polygon
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              {
-                icon: FileCheck,
-                title: 'Hash Data',
-                desc: 'Data pasien di-hash menggunakan SHA-256 untuk menghasilkan fingerprint unik.',
-                color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/50',
-              },
-              {
-                icon: Database,
-                title: 'Simpan On-Chain',
-                desc: 'Hash disimpan di smart contract di jaringan Polygon untuk biaya gas yang minimal.',
-                color: 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/50',
-              },
-              {
-                icon: ShieldCheck,
-                title: 'Verifikasi',
-                desc: 'Setiap transaksi diverifikasi oleh validator jaringan Polygon dalam hitungan detik.',
-                color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/50',
-              },
-              {
-                icon: Lock,
-                title: 'Immutable',
-                desc: 'Data tidak dapat diubah atau dihapus, audit trail permanen dan transparan.',
-                color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/50',
-              },
-            ].map((item, i) => {
-              const Icon = item.icon
-              return (
-                <div key={i} className="text-center p-4 rounded-xl bg-muted/50 border border-border">
-                  <div className={`w-12 h-12 rounded-xl ${item.color} flex items-center justify-center mx-auto mb-3`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-semibold text-card-foreground mb-1">{item.title}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
-                </div>
-              )
-            })}
-          </div>
-        </CardContent>
       </Card>
     </div>
   )
