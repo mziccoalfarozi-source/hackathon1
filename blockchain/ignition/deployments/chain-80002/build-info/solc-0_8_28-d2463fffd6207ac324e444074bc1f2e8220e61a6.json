@@ -1,0 +1,49 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-d2463fffd6207ac324e444074bc1f2e8220e61a6",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "compilerType": "solc",
+  "toolVersions": {
+    "hardhat": "3.8.0"
+  },
+  "userSourceNameMap": {
+    "contracts/TriageAuditTrail.sol": "project/contracts/TriageAuditTrail.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/TriageAuditTrail.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\n/**\n * @title TriageAuditTrail\n * @notice Smart contract untuk mencatat hasil triage pasien secara immutable\n *         sebagai bagian dari sistem X-TRACE (Rumah Sakit 212).\n * @dev Setiap konfirmasi triage oleh admin/dokter akan memanggil logTriage().\n *      Data yang dicatat: visitId (dari Supabase), nama pasien, prioritas AI,\n *      confidence score (basis points), dan aksi yang dilakukan.\n *      Semua data bersifat append-only — tidak ada fungsi update/delete.\n */\ncontract TriageAuditTrail {\n    // ─────────────────────────────────────────────────────────────\n    // Events\n    // ─────────────────────────────────────────────────────────────\n\n    /**\n     * @notice Dipancarkan setiap kali triage baru dikonfirmasi.\n     * @param recordId       Indeks record (auto-increment, mulai dari 0)\n     * @param visitId        UUID kunjungan dari Supabase (string)\n     * @param patientName    Nama pasien (denormalized untuk audit trail)\n     * @param priority       Level prioritas: \"CRITICAL\" | \"HIGH\" | \"MEDIUM\" | \"LOW\"\n     * @param confidenceBps  Confidence model AI dalam basis points (0–10000)\n     *                       Contoh: 9400 = 94%, 7500 = 75%\n     * @param action         Jenis aksi: contoh \"AI TRIAGE + KONFIRMASI\"\n     * @param confirmedBy    Alamat wallet/akun yang mengkonfirmasi triage\n     * @param timestamp      Unix timestamp saat transaksi dikonfirmasi\n     */\n    event TriageLogged(\n        uint256 indexed recordId,\n        string  visitId,\n        string  patientName,\n        string  priority,\n        uint256 confidenceBps,\n        string  action,\n        address indexed confirmedBy,\n        uint256 timestamp\n    );\n\n    // ─────────────────────────────────────────────────────────────\n    // Storage\n    // ─────────────────────────────────────────────────────────────\n\n    struct TriageRecord {\n        uint256 recordId;\n        string  visitId;\n        string  patientName;\n        string  priority;\n        uint256 confidenceBps;\n        string  action;\n        address confirmedBy;\n        uint256 timestamp;\n        bool    exists;\n    }\n\n    /// @notice Semua record triage yang sudah dicatat, berurutan.\n    TriageRecord[] public records;\n\n    /// @notice Mapping dari visitId ke indeks array records (untuk lookup cepat).\n    mapping(string => uint256) private _visitIdToIndex;\n    mapping(string => bool)    private _visitIdExists;\n\n    // ─────────────────────────────────────────────────────────────\n    // Write Function\n    // ─────────────────────────────────────────────────────────────\n\n    /**\n     * @notice Catat satu keputusan triage ke blockchain.\n     * @dev Dipanggil dari frontend (ethers.js) saat admin mengkonfirmasi triage.\n     *      Satu visitId hanya boleh dicatat SATU kali (idempotent).\n     * @param visitId        UUID kunjungan Supabase\n     * @param patientName    Nama pasien\n     * @param priority       \"CRITICAL\" | \"HIGH\" | \"MEDIUM\" | \"LOW\"\n     * @param confidenceBps  Confidence AI dalam basis points (0–10000)\n     * @param action         Deskripsi aksi, misal \"AI TRIAGE + KONFIRMASI\"\n     */\n    function logTriage(\n        string calldata visitId,\n        string calldata patientName,\n        string calldata priority,\n        uint256         confidenceBps,\n        string calldata action\n    ) external {\n        require(bytes(visitId).length > 0,      \"visitId kosong\");\n        require(bytes(patientName).length > 0,  \"nama pasien kosong\");\n        require(bytes(priority).length > 0,     \"priority kosong\");\n        require(confidenceBps <= 10000,         \"confidenceBps melebihi 10000\");\n        require(!_visitIdExists[visitId],       \"visitId sudah dicatat\");\n\n        uint256 newId = records.length;\n\n        records.push(TriageRecord({\n            recordId:     newId,\n            visitId:      visitId,\n            patientName:  patientName,\n            priority:     priority,\n            confidenceBps: confidenceBps,\n            action:       action,\n            confirmedBy:  msg.sender,\n            timestamp:    block.timestamp,\n            exists:       true\n        }));\n\n        _visitIdToIndex[visitId] = newId;\n        _visitIdExists[visitId]  = true;\n\n        emit TriageLogged(\n            newId,\n            visitId,\n            patientName,\n            priority,\n            confidenceBps,\n            action,\n            msg.sender,\n            block.timestamp\n        );\n    }\n\n    // ─────────────────────────────────────────────────────────────\n    // Read Functions\n    // ─────────────────────────────────────────────────────────────\n\n    /// @notice Total jumlah record yang telah dicatat.\n    function totalRecords() external view returns (uint256) {\n        return records.length;\n    }\n\n    /**\n     * @notice Ambil record berdasarkan indeks (recordId).\n     * @param recordId Indeks record (0-based)\n     */\n    function getRecord(uint256 recordId) external view returns (TriageRecord memory) {\n        require(recordId < records.length, \"recordId tidak valid\");\n        return records[recordId];\n    }\n\n    /**\n     * @notice Cari record berdasarkan visitId dari Supabase.\n     * @param visitId UUID kunjungan\n     * @return record TriageRecord yang ditemukan\n     */\n    function getRecordByVisitId(string calldata visitId)\n        external\n        view\n        returns (TriageRecord memory record)\n    {\n        require(_visitIdExists[visitId], \"visitId tidak ditemukan\");\n        return records[_visitIdToIndex[visitId]];\n    }\n\n    /**\n     * @notice Cek apakah visitId sudah tercatat di blockchain.\n     * @param visitId UUID kunjungan\n     */\n    function isVisitRecorded(string calldata visitId) external view returns (bool) {\n        return _visitIdExists[visitId];\n    }\n\n    /**\n     * @notice Ambil N record terbaru (untuk tampilan audit dashboard).\n     * @param count Jumlah record yang diinginkan (dari yang terbaru)\n     */\n    function getLatestRecords(uint256 count)\n        external\n        view\n        returns (TriageRecord[] memory)\n    {\n        uint256 total = records.length;\n        if (count > total) count = total;\n\n        TriageRecord[] memory result = new TriageRecord[](count);\n        for (uint256 i = 0; i < count; i++) {\n            result[i] = records[total - 1 - i]; // terbaru duluan\n        }\n        return result;\n    }\n}\n"
+      }
+    }
+  }
+}
