@@ -221,7 +221,8 @@ export async function getOnChainRecord(visitId: string): Promise<BlockchainRecor
     const contract = await getContract(false);
     const raw = await contract.getRecordByVisitId(visitId);
     return mapRawRecord(raw);
-  } catch {
+  } catch (err) {
+    console.error("getOnChainRecord error:", err);
     return null;
   }
 }

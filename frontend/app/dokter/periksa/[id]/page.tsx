@@ -159,7 +159,7 @@ export default function PeriksaPasien() {
         await connectWallet();
         // Asumsi: Dokter memiliki wewenang mencatat 'DOKTER CONFIRM' ke Smart Contract yang sama
         const bcResult = await logTriageToBlockchain(
-          patient.id,
+          `${patient.id}-FINAL`,
           patient.name,
           finalEsi === 1 ? 'CRITICAL' : finalEsi === 2 ? 'HIGH' : finalEsi === 3 ? 'MEDIUM' : 'LOW',
           toBasisPoints(patient.triageResult.confidence), // Pakai confidence dari AI awal
@@ -168,13 +168,20 @@ export default function PeriksaPasien() {
         realTxHash = bcResult.txHash;
         toast.success(`Konfirmasi dokter tercatat di blockchain! Block #${bcResult.blockNumber}`);
       } catch (bcErr: any) {
-        if (bcErr?.message?.includes("user rejected") || bcErr?.message?.includes("User rejected")) {
-           toast.warning("Pencatatan blockchain dibatalkan dokter. Menggunakan local hash.");
+        const errMsg = bcErr?.message || String(bcErr);
+        const lowerErr = errMsg.toLowerCase();
+        
+        if (lowerErr.includes("user rejected")) {
+           toast.error("Pencatatan blockchain dibatalkan. Transaksi wajib dikonfirmasi!");
+        } else if (lowerErr.includes("insufficient funds") || lowerErr.includes("insufficient balance")) {
+           toast.error("Saldo MATIC Amoy Anda tidak cukup untuk membayar biaya transaksi (Gas Fee)!");
         } else {
-           const errMsg = bcErr?.message || String(bcErr);
            toast.error(`Gagal konek MetaMask/Blockchain: ${errMsg}`);
            console.error("Blockchain log error:", bcErr);
         }
+        // HENTIKAN proses jika blockchain gagal (wajib blockchain untuk Hackathon)
+        setIsSubmitting(false);
+        return;
       }
 
       // Update patient status in local context

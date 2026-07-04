@@ -303,9 +303,9 @@ export function QueueProvider({ children }: { children: ReactNode }) {
     // Resolve patient_id:
     // Pasien Kode (anonymous critical) belum punya baris di tabel patients,
     // jadi kita insert placeholder dulu dan gunakan UUID yang dikembalikan.
-    let resolvedPatientId = patient.id;
+    let resolvedPatientId = patient.patientId || patient.id;
 
-    if (patient.id.startsWith("CODE-")) {
+    if (resolvedPatientId.startsWith("CODE-")) {
       // Insert placeholder ke tabel patients dengan semua field yang mungkin NOT NULL
       const { data: anonPatient, error: anonError } = await supabase
         .from("patients")
@@ -340,6 +340,7 @@ export function QueueProvider({ children }: { children: ReactNode }) {
     const { data: visitData, error: visitError } = await supabase
       .from("visits")
       .insert({
+        id: patient.id, // Gunakan UUID yang di-generate dari frontend (sudah dicatat di Blockchain)
         patient_id: resolvedPatientId, // UUID valid dari tabel patients
         queue_number: patient.queueNumber,
         complaint: patient.complaint,

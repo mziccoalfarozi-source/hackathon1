@@ -10,7 +10,7 @@ import {
   AlertTriangle, Zap, Clock, Check, Lock, Database, FileCheck,
   Copy, CheckCheck, Link2, Stethoscope, ChevronDown, ChevronUp
 } from 'lucide-react'
-import { AUDIT_RECORDS, ESI_CONFIG } from '@/data/mock'
+import { ESI_CONFIG } from '@/data/mock'
 import { useQueue } from '@/contexts/QueueContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { StaggerContainer, StaggerItem } from '@/components/motion'
@@ -22,36 +22,30 @@ type PriorityFilter = 'ALL' | 1 | 2 | 3 | 4 | 5
 export default function AuditTrail() {
   const { patients } = useQueue();
   
-  // Combine mock historical records and current dynamic patients for audit view
-  const combinedRecords: AuditRecord[] = [
-    ...patients.filter(p => p.tx_hash_initial).map(p => ({
-      id: `AUDIT-${p.id}`,
-      patientName: p.name,
-      timestamp: p.timestamp,
-      action: 'AI Triage & Doctor Exam',
-      triagePriority: p.triageResult.priority,
-      txHash: p.tx_hash_initial || '',
-      blockNumber: 1245000 + Math.floor(Math.random()*100),
-      verified: !!p.tx_hash_final,
-      details: p.complaint,
-      esi_level: p.triageResult.esi_level,
-      tx_hash_initial: p.tx_hash_initial,
-      tx_hash_final: p.tx_hash_final,
-      block_number_initial: 1245000,
-      block_number_final: p.tx_hash_final ? 1245050 : undefined,
-      diubah_dokter: p.triageResult.esi_level !== p.triageFormInput?.gcs_total ? false : false // mock
-    })),
-    ...AUDIT_RECORDS.map(r => ({
-      ...r,
-      esi_level: (r.triagePriority === 'CRITICAL' ? 1 : r.triagePriority === 'HIGH' ? 2 : r.triagePriority === 'MEDIUM' ? 3 : 4) as EsiLevel,
-      tx_hash_initial: r.tx_hash_initial || r.txHash,
-      tx_hash_final: r.tx_hash_final || (r.verified ? '0x' + Math.random().toString(16).slice(2, 64) : undefined),
-      block_number_initial: r.blockNumber,
-      block_number_final: r.verified ? r.blockNumber + 50 : undefined
-    }))
-  ];
+  // Ambil murni dari database realtime (patients context), abaikan data dummy
+  const records: AuditRecord[] = React.useMemo(() => {
+    return patients
+      .filter(p => p.tx_hash_initial) // Hanya yang sudah dikirim ke blockchain (memiliki hash)
+      .map(p => ({
+        id: `AUDIT-${p.id}`,
+        patientName: p.name,
+        timestamp: p.timestamp,
+        action: 'AI Triage & Doctor Exam',
+        triagePriority: p.triageResult.priority,
+        txHash: p.tx_hash_initial || '',
+        blockNumber: 1245000 + Math.floor(Math.random()*100), // Bisa dikembangkan untuk menyimpan block sebenarnya
+        verified: !!p.tx_hash_final,
+        details: p.complaint,
+        esi_level: p.triageResult.esi_level,
+        tx_hash_initial: p.tx_hash_initial,
+        tx_hash_final: p.tx_hash_final,
+        block_number_initial: 1245000,
+        block_number_final: p.tx_hash_final ? 1245050 : undefined,
+        diubah_dokter: p.triageResult.esi_level !== p.triageFormInput?.gcs_total ? false : false
+      }))
+      .sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
+  }, [patients]);
 
-  const [records] = useState<AuditRecord[]>(combinedRecords.sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime()))
   const [search, setSearch] = useState('')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('ALL')
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -375,30 +369,30 @@ export default function AuditTrail() {
                                   )}
 
                                   {typeof onChainStatus[record.id.replace('AUDIT-', '')] === 'object' && onChainStatus[record.id.replace('AUDIT-', '')]?.exists && (
-                                    <div className="p-4 bg-emerald-50/50 rounded-lg border border-emerald-200">
-                                      <div className="flex items-center gap-2 text-emerald-700 font-semibold mb-3">
+                                    <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg border border-emerald-200 dark:border-emerald-500/30">
+                                      <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-semibold mb-3">
                                         <CheckCheck className="w-5 h-5" /> Data Terbukti Valid (Tamper-Proof)
                                       </div>
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                                         <div>
                                           <p className="text-xs text-muted-foreground mb-1">Record ID</p>
-                                          <p className="font-mono font-medium">{onChainStatus[record.id.replace('AUDIT-', '')].recordId}</p>
+                                          <p className="font-mono font-medium text-foreground">{onChainStatus[record.id.replace('AUDIT-', '')].recordId}</p>
                                         </div>
                                         <div>
                                           <p className="text-xs text-muted-foreground mb-1">Prioritas (On-Chain)</p>
-                                          <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                                          <Badge variant="outline" className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/50">
                                             {onChainStatus[record.id.replace('AUDIT-', '')].priority}
                                           </Badge>
                                         </div>
                                         <div>
                                           <p className="text-xs text-muted-foreground mb-1">Tercatat Oleh</p>
-                                          <p className="font-mono text-[10px] bg-white p-1 rounded border break-all">
+                                          <p className="font-mono text-[10px] bg-white dark:bg-black/40 p-1 rounded border border-border break-all text-foreground">
                                             {onChainStatus[record.id.replace('AUDIT-', '')].confirmedBy}
                                           </p>
                                         </div>
                                         <div>
                                           <p className="text-xs text-muted-foreground mb-1">Timestamp Block</p>
-                                          <p className="font-medium text-xs">
+                                          <p className="font-medium text-xs text-foreground">
                                             {onChainStatus[record.id.replace('AUDIT-', '')].timestamp.toLocaleString()}
                                           </p>
                                         </div>

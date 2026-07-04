@@ -181,11 +181,13 @@ export default function InputPasien() {
         res = await callTriageApi(triageInput as TriageFormInput);
       }
 
+      const generatedVisitId = crypto.randomUUID();
+      
       let realTxHash = res.tx_hash_initial;
       try {
         await connectWallet();
         const bcResult = await logTriageToBlockchain(
-          patient.id,
+          generatedVisitId,
           patient.name,
           res.result.priority,
           toBasisPoints(res.result.confidence),
@@ -194,13 +196,21 @@ export default function InputPasien() {
         realTxHash = bcResult.txHash;
         toast.success(`Triage tercatat di blockchain! Block #${bcResult.blockNumber}`);
       } catch (bcErr: any) {
-        if (bcErr?.message?.includes("user rejected") || bcErr?.message?.includes("User rejected")) {
-           toast.warning("Pencatatan blockchain dibatalkan user. Menggunakan local hash.");
+        const errMsg = bcErr?.message || String(bcErr);
+        const lowerErr = errMsg.toLowerCase();
+        
+        if (lowerErr.includes("user rejected")) {
+           toast.error("Pencatatan blockchain dibatalkan. Transaksi wajib dikonfirmasi!");
+        } else if (lowerErr.includes("insufficient funds") || lowerErr.includes("insufficient balance")) {
+           toast.error("Saldo MATIC Amoy Anda tidak cukup untuk membayar biaya transaksi (Gas Fee)!");
         } else {
-           const errMsg = bcErr?.message || String(bcErr);
            toast.error(`Gagal konek MetaMask/Blockchain: ${errMsg}`);
            console.error("Blockchain log error:", bcErr);
         }
+        // HENTIKAN proses jika blockchain gagal (wajib blockchain untuk Hackathon)
+        setIsSubmitting(false);
+        toast.dismiss('submit');
+        return;
       }
 
       const queuePrefix = res.result.esi_level === 1 || res.result.esi_level === 2 ? "A" : "B";
@@ -208,6 +218,8 @@ export default function InputPasien() {
 
       const newPatientObj: QueuePatient = {
         ...patient,
+        id: generatedVisitId,
+        patientId: patient.id,
         vitalSigns: {
           bloodPressure: triageInput.systolic_bp && triageInput.diastolic_bp ? `${triageInput.systolic_bp}/${triageInput.diastolic_bp}` : "",
           heartRate: triageInput.heart_rate || 0,
