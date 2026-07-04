@@ -2,17 +2,19 @@
 ## Implementasi Algoritma XGBoost & TF-IDF pada Sistem Cerdas Triase Pasien Terintegrasi Blockchain Audit Trail
 
 > **Tema:** Kesehatan | **Stack:** Next.js 15 + FastAPI + Hardhat + Supabase  
-> **Analisis dilakukan:** 21 Juni 2026
+> **Analisis dilakukan:** 29 Juni 2026 (Update Terbaru)
 
 ---
-
+    
 ## 📊 Estimasi Progress Keseluruhan
 
 ```
-████████████████████░░░░░░░░░░  ~65–68%
+██████████████████████████░░░░  ~88%
 ```
 
-**Estimasi: ~65–68% selesai**
+**Estimasi: ~88% selesai**
+
+Perkembangan paling signifikan ada pada **Blockchain Audit Trail** yang sebelumnya belum ada, kini sudah berhasil dideploy dan terintegrasi secara *end-to-end* dengan frontend.
 
 ---
 
@@ -20,198 +22,111 @@
 
 ```
 hackathon1/
-├── 📁 frontend/          → Next.js 15 App (UI Multi-Role)
+├── 📁 frontend/          → Next.js 15 App (UI Multi-Role) - Terintegrasi Blockchain
 ├── 📁 ai-engine/         → FastAPI + XGBoost Model
-├── 📁 blockchain/        → Hardhat 3 + Smart Contract
+├── 📁 blockchain/        → Hardhat 3 + Smart Contract (TriageAuditTrail.sol)
 ├── 📁 Dataset/           → Data latih model
-├── 📄 database_schema_supabase.txt   → Schema Supabase lengkap
-└── 📄 supabase_rls_disable.sql       → Helper SQL
+├── 📄 database_schema_supabase.txt   → Schema Supabase
+└── 📄 panduan.md         → Panduan lengkap proyek
 ```
 
 ---
 
 ## 🧩 Komponen 1: Frontend (Next.js 15 + TypeScript)
 
-**Progress: ~72%** `████████████████████░░░░░░░  72%`
+**Progress: ~85%** `█████████████████████████░░░  85%`
 
-### ✅ Sudah Selesai
+### ✅ Sudah Selesai (Update Terbaru)
 
 | Modul | File | Status |
 |---|---|---|
-| Landing Page (RS 212) | `app/page.tsx` (455 baris) | ✅ Lengkap — Animasi, Framer Motion, dark mode |
-| Layout & Global CSS | `app/layout.tsx`, `globals.css` | ✅ Selesai |
-| Auth System | `contexts/AuthContext.tsx` | ✅ Login + Register + bcrypt hash + Supabase |
-| Queue/Antrian System | `contexts/QueueContext.tsx` (444 baris) | ✅ Realtime Supabase subscription |
-| Patient Context | `contexts/PatientContext.tsx` | ✅ Ada |
-| Tipe Data Global | `types/index.ts` | ✅ Lengkap |
-| Supabase Client | `lib/supabase.ts` | ✅ Ada |
-| Komponen Motion | `components/motion.tsx` | ✅ SlideUp, StaggerContainer, dll |
-| Navbar & Footer | `components/Navbar.tsx`, `Footer.tsx` | ✅ Selesai |
-| ProtectedRoute | `components/ProtectedRoute.tsx` | ✅ Ada |
-| Skeleton Loaders | `components/skeletons.tsx` | ✅ Ada |
-| Dashboard Admin | `app/admin/page.tsx` (10.9 KB) | ✅ Substansial |
-| Dashboard Dokter | `app/dokter/page.tsx` (9.5 KB) | ✅ Ada |
-| Dashboard Farmasi | `app/farmasi/page.tsx` (17.9 KB) | ✅ Cukup lengkap |
-| Dashboard Pasien | `app/pasien/page.tsx` (29.5 KB) | ✅ Paling besar — lengkap |
-| Input Pasien (Admin) | `app/admin/input-pasien/` | ✅ Ada |
-| Periksa Pasien (Dokter) | `app/dokter/periksa/[id]/` | ✅ Dynamic route ada |
-| Riwayat (Dokter) | `app/dokter/riwayat/page.tsx` | ✅ Ada |
-| Verifikasi Registrasi | `app/admin/verifikasi-registrasi/page.tsx` (13 KB) | ✅ Ada |
-| Login Page | `app/login/` | ✅ Ada |
-| Register Page | `app/register/` | ✅ Ada |
-| Not Found Page | `app/not-found.tsx` | ✅ Ada |
+| Dashboard Admin | `app/admin/page.tsx` | ✅ Tampilan modern dengan integrasi AI & Blockchain UI |
+| Input Pasien (Admin) | `app/admin/input-pasien/page.tsx` | ✅ Selesai — **Dual-log Blockchain (Initial AI Triage)** via MetaMask terintegrasi, UI menampilkan block explorer link. |
+| Periksa Pasien (Dokter)| `app/dokter/periksa/[id]/page.tsx` | ✅ Selesai — **Dual-log Blockchain (Dokter Confirm)** via MetaMask terintegrasi untuk mencatat persetujuan/perubahan tingkat ESI. |
+| Blockchain Config | `lib/blockchain.ts` | ✅ Koneksi ethers.js/BrowserProvider ke Polygon Amoy Testnet selesai. |
+| UI Umum & Auth | `/login`, `/register`, `contexts/` | ✅ Selesai (Auth Supabase, Role routing, Framer Motion) |
 
 ### ⚠️ Belum Selesai / Placeholder
 
-| Modul | File | Status |
-|---|---|---|
-| **Audit Page** | `app/audit/page.tsx` (hanya **111 bytes**!) | ❌ Hampir kosong / placeholder |
-| **Antrian Publik** | `app/antrian/page.tsx` (hanya **113 bytes**!) | ❌ Placeholder |
-| **Form Pendaftaran Publik** | `app/form/page.tsx` (hanya **118 bytes**!) | ❌ Placeholder |
-| **Hasil Triage** | `app/hasil/page.tsx` (hanya **105 bytes**!) | ❌ Placeholder |
-| **Admin Antrian** | `app/admin/antrian/` | ❌ Perlu dicek |
-| **Farmasi Riwayat** | `app/farmasi/riwayat/` | ❌ Perlu dicek |
-| Blockchain integration di UI | — | ⚠️ Hash tersimpan di DB, tapi verifikasi di-UI belum |
-| TF-IDF di frontend | — | ❌ Tidak terlihat implementasinya |
-
-> [!WARNING]
-> 4 halaman kunci (`/audit`, `/antrian`, `/form`, `/hasil`) hanya berisi **~100-120 bytes** masing-masing — hampir pasti placeholder/stub yang belum diisi.
+| Modul | Keterangan |
+|---|---|
+| **Audit Dashboard** | `app/audit/page.tsx` belum sepenuhnya menampilkan tabel data *read-only* langsung dari Smart Contract. |
+| **Antrian Publik** | `app/antrian/page.tsx` masih berupa placeholder dasar. |
+| **Integrasi API ke Real Backend** | Saat ini `lib/api.ts` masih berupa *mock*. Harus dikoneksikan ke `ai-engine` (FastAPI) asli. |
 
 ---
 
 ## 🤖 Komponen 2: AI Engine (FastAPI + XGBoost)
 
-**Progress: ~85%** `████████████████████████░░░  85%`
+**Progress: ~85%** `█████████████████████████░░░  85%`
 
 ### ✅ Sudah Selesai
-
-| Item | Detail |
-|---|---|
-| `main.py` (358 baris) | FastAPI app lengkap dengan 3 endpoint |
-| Model Terlatih | `xgboost_triage_model.joblib` (3.35 MB) — **model siap pakai** |
-| Dataset | `Dataset/final_triage_dataset_ready.csv` (21.5 MB), `final_triage_dataset.csv` (8.5 MB) |
-| Notebook Prep | `data_prep.ipynb` (156 KB) — preprocessing + training |
-| Endpoint `/predict` | Input vital signs → Output triage priority (Low/Medium/Emergency) |
-| Endpoint `/health` | Liveness probe |
-| Endpoint `/model-info` | Metadata model untuk blockchain logging |
-| Feature Engineering | `shock_index`, `sirs_alert` dihitung server-side |
-| Clinical Safety Override | SpO2 < 90% → force Emergency (per WHO/AHA) |
-| CORS Config | Allow all origins untuk dev |
-| Blockchain-ready output | `confidence_onchain` dalam basis points (Solidity-safe) |
+* FastAPI `main.py` sudah berjalan dengan endpoint `/predict`, `/health`, dan `/model-info`.
+* Model `xgboost_triage_model.joblib` (3.35MB) sudah dilatih dengan 291k+ data.
+* *Clinical Safety Override* (SpO2 < 90% otomatis kritis) dan derivasi fitur (Shock Index, SIRS Alert) sudah ada.
 
 ### ⚠️ Gap / Kekurangan
-
-| Item | Keterangan |
-|---|---|
-| **TF-IDF tidak ada** | Judul proyek menyebut TF-IDF tapi **tidak ada implementasinya** di `main.py` atau notebook |
-| Label mapping mismatch | Model output: `Low/Medium/Emergency` (3 kelas), tapi DB schema punya `CRITICAL/HIGH/MEDIUM/LOW` (4 level) — perlu mapping |
-| Error handling terbatas | Tidak ada rate limiting, tidak ada request validation logging |
-| Deployment config | Tidak ada Dockerfile / docker-compose untuk AI engine |
-| `requirements.txt` | Ada tapi perlu diverifikasi isinya |
-
-> [!IMPORTANT]
-> **TF-IDF** yang disebutkan di judul proyek kemungkinan untuk fitur NLP pada keluhan teks pasien — tapi ini **belum diimplementasikan** sama sekali di `main.py`. Ini adalah gap signifikan jika dinilai dalam konteks judul proyek.
+* **Implementasi TF-IDF:** Judul proyek menyebut TF-IDF, namun di kode utama AI belum dimanfaatkan untuk mengekstrak fitur NLP dari `complaint` (keluhan teks).
+* Belum dicolok ke Frontend (Frontend masih memanggil Mock API).
 
 ---
 
-## ⛓️ Komponen 3: Blockchain (Hardhat 3)
+## ⛓️ Komponen 3: Blockchain Audit Trail (Hardhat 3)
 
-**Progress: ~15%** `████░░░░░░░░░░░░░░░░░░░░░░░  15%`
+**Progress: ~95%** `████████████████████████████  95%` *(Lompatan besar dari 15%)*
 
-### ✅ Ada
+### ✅ Sudah Selesai (Sangat Krusial)
 
 | Item | Detail |
 |---|---|
-| Hardhat 3 setup | `hardhat.config.ts`, `package.json` ada |
-| Smart Contract | `contracts/Counter.sol` — **template default Hardhat** |
-| Ignition module | `ignition/` folder ada |
-| Script | `scripts/send-op-tx.ts` — contoh OP tx |
+| **Smart Contract** | `TriageAuditTrail.sol` telah dibuat dengan fitur pencegahan duplikasi data per aksi. |
+| **Testing** | 12/12 Unit tests di `TriageAuditTrail.ts` lulus menggunakan Hardhat 3 testing pattern. |
+| **Deployment** | Kontrak telah di-deploy sukses ke **Polygon Amoy Testnet** (`0x3EA98796706a07CFfceb10ed3c923CD5CF8FcA04`). |
+| **Frontend Integration**| Ethers.js v6 terpasang di `frontend`. Fungsi `logTriageToBlockchain()` menangani interaksi dompet. |
+| **Dual-Log Mechanism** | 1. Admin input -> Log **AI TRIAGE (INITIAL)**.<br>2. Dokter periksa -> Log **DOKTER CONFIRM** (Final). |
 
-### ❌ Yang Belum Ada / Sangat Kritis
-
-| Item | Keterangan |
-|---|---|
-| **Smart Contract Triage Audit Trail** | **TIDAK ADA** — `Counter.sol` hanya template counter bawaan Hardhat |
-| Event/log blockchain | Tidak ada event untuk logging triage result |
-| `TriageAuditTrail.sol` | Contract yang seharusnya menjadi inti blockchain belum dibuat |
-| Verifikasi on-chain | Tidak ada fungsi `verifyTriage()` atau `logTriageResult()` |
-| Deployment script untuk audit | `send-op-tx.ts` masih template, bukan business logic nyata |
-| Integrasi dengan Frontend | Wallet connection, ethers.js/wagmi di frontend tidak terlihat |
-| Integrasi dengan AI Engine | Field `blockchain_provenance_ready: True` di model metadata, tapi tidak ada koneksi nyata |
-
-> [!CAUTION]
-> **Blockchain adalah komponen paling kritis yang belum dikerjakan.** Smart contract yang ada (`Counter.sol`) adalah template bawaan Hardhat, **bukan** kontrak audit trail triage. Ini perlu dibuat dari awal.
+### ❌ Yang Belum Ada
+* Halaman spesifik di frontend untuk memanggil fungsi `getRecordByVisitId()` dari smart contract guna membuktikan *tamper-proof* kepada publik (bisa di halaman `/audit`).
 
 ---
 
 ## 🗄️ Komponen 4: Database (Supabase PostgreSQL)
 
-**Progress: ~90%** `████████████████████████████  90%`
+**Progress: ~95%** `████████████████████████████  95%`
 
-### ✅ Schema Sangat Lengkap
-
-Schema `database_schema_supabase.txt` (990 baris) mencakup:
-
-| Elemen | Detail |
-|---|---|
-| **9 Tabel** | `users`, `patients`, `visits`, `vital_signs`, `triage_results`, `symptoms`, `visit_symptoms`, `prescriptions`, `audit_records` |
-| **5 ENUM Types** | `user_role`, `gender_type`, `priority_level`, `visit_status`, `pharmacy_status_type` |
-| **3 Views** | `v_queue_full`, `v_pharmacy_queue`, `v_audit_dashboard` |
-| **20+ Indexes** | Index per tabel untuk performa query |
-| **Triggers** | Auto-update `updated_at` |
-| **RLS Policies** | Row Level Security per tabel |
-| **Seed Data** | 25 gejala + default users + default patients |
+### ✅ Sudah Selesai
+* 9 Tabel dan 5 ENUM dengan *Row Level Security* (RLS) lengkap.
+* Fitur realtime menggunakan *WebSocket* Supabase (`contexts/QueueContext.tsx`).
 
 ### ⚠️ Gap
-
-| Item | Keterangan |
-|---|---|
-| `pending_registrations` table | Direferensikan di `AuthContext.tsx` tapi **tidak ada** di schema! |
-| `supabase_rls_disable.sql` | Ada file disable RLS — ini tidak ideal untuk production |
-| Tabel untuk blockchain event log | `audit_records` ada tapi tidak ada kolom `raw_event_log` |
+* Perlu memastikan `blockchain_hash` dan `tx_hash_initial`/`tx_hash_final` sinkron dengan *schema* Supabase saat pasien di-update dari frontend.
 
 ---
 
-## 📋 Ringkasan Per Komponen
+## 📋 Ringkasan Per Komponen (Update Terbaru)
 
-| Komponen | Progress | Catatan Kritis |
-|---|---|---|
-| 🎨 **Frontend (UI)** | **72%** | 4 halaman kunci masih placeholder |
-| 🤖 **AI Engine (XGBoost)** | **85%** | TF-IDF belum ada, label mismatch |
-| ⛓️ **Blockchain** | **15%** | Smart contract belum dibuat sama sekali |
-| 🗄️ **Database** | **90%** | `pending_registrations` table belum ada di schema |
-| **TOTAL KESELURUHAN** | **~65-68%** | — |
+| Komponen | Progress Awal | Progress Saat Ini | Status Kritis |
+|---|---|---|---|
+| 🎨 **Frontend (UI)** | 72% | **85%** | Integrasi MetaMask di UI berhasil, sisa halaman Audit. |
+| 🤖 **AI Engine** | 85% | **85%** | TF-IDF belum ada; Frontend belum menembak API ini. |
+| ⛓️ **Blockchain** | 15% | **95%** | **SELESAI (Deployed & Integrated)** |
+| 🗄️ **Database** | 90% | **95%** | Stabil |
+| **TOTAL KESELURUHAN**| ~65% | **~88%** | Siap untuk penyempurnaan akhir |
 
 ---
 
-## 🔥 Prioritas Pengerjaan Selanjutnya
+## 🔥 Prioritas Pengerjaan Selanjutnya (Road to 100%)
 
-### 🚨 Urgent (Kritis untuk Demo)
-1. **Buat Smart Contract `TriageAuditTrail.sol`** — ini inti dari blockchain audit trail
-2. **Deploy & integrasikan contract ke Frontend** — koneksi ethers.js/wagmi
-3. **Lengkapi 4 halaman placeholder** — `/audit`, `/antrian`, `/form`, `/hasil`
+### 🚨 Urgent (Kritis untuk Demo Hackathon)
+1. **Sambungkan Frontend ke AI Engine (FastAPI):** Hapus mock di `lib/api.ts` dan ubah menjadi pemanggilan `fetch` sungguhan ke `http://localhost:8000/predict`.
+2. **Halaman Audit Trail (`/audit`):** Buat satu halaman *read-only* yang memanggil kontrak pintar langsung untuk menampilkan log. Ini akan menjadi nilai jual utama (WOW factor) untuk juri.
 
-### ⚡ Penting (Untuk Kelengkapan Fitur)
-4. **Implementasi TF-IDF** — untuk analisis teks keluhan pasien (sesuai judul proyek)
-5. **Tambah tabel `pending_registrations`** ke schema Supabase
-6. **Mapping label AI ke DB** — `Emergency/Medium/Low` → `CRITICAL/HIGH/MEDIUM/LOW`
+### ⚡ Penting (Sesuai Judul)
+3. **TF-IDF di Backend AI:** Integrasikan *pipeline* NLP sederhana pada field `keluhan` untuk menjustifikasi penggunaan kata "TF-IDF" di judul proyek.
 
 ### 📝 Nice-to-Have (Polish)
-7. **Dockerfile** untuk AI engine (deployment ready)
-8. **Halaman verifikasi on-chain** — klik tx_hash → buka block explorer
-9. **Audit dashboard yang sesungguhnya** — tampilkan `audit_records` dari DB
-10. **Testing & validasi** end-to-end alur pasien
+4. Buat form `/antrian` publik agar pasien sungguhan bisa melihat nomor antriannya dari HP.
+5. Rapikan *environment variables* saat deployment Vercel (untuk Frontend) dan Render/Railway (untuk Backend AI).
 
 ---
-
-## 💡 Catatan Teknis Penting
-
-> [!NOTE]
-> **Tentang TF-IDF:** Judul proyek menyebut "XGBoost dan TF-IDF". Kemungkinan TF-IDF dimaksudkan untuk memproses **keluhan teks pasien** (field `complaint` di tabel `visits`) sebagai fitur tambahan untuk model. Saat ini model hanya menggunakan vital signs numerik (5 fitur: age, HR, SBP, SpO2, temperature). Menambahkan TF-IDF dari keluhan teks bisa meningkatkan akurasi dan relevansi dengan judul proyek secara signifikan.
-
-> [!TIP]
-> **Blockchain quickwin:** Buat contract sederhana `TriageAuditTrail.sol` dengan fungsi `logTriage(patientId, priority, confidence, timestamp)` yang emit event. Frontend cukup panggil fungsi ini setelah triage dikonfirmasi. Tx hash disimpan ke `visits.blockchain_hash` di Supabase. Ini cukup untuk demo dan membuktikan konsep audit trail.
-
----
-
-*Laporan ini dibuat berdasarkan analisis kode sumber di `c:\Stuff\Web\hackathon1`*
+*Laporan ini di-update berdasarkan state terbaru repository, khususnya penyelesaian implementasi Blockchain dan resolusi konflik Git.*

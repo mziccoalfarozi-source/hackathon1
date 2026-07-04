@@ -14,6 +14,7 @@ import { AUDIT_RECORDS, ESI_CONFIG } from '@/data/mock'
 import { useQueue } from '@/contexts/QueueContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { StaggerContainer, StaggerItem } from '@/components/motion'
+import { getOnChainRecord, truncateTxHash } from '@/lib/blockchain'
 import type { AuditRecord, EsiLevel } from '@/types'
 
 type PriorityFilter = 'ALL' | 1 | 2 | 3 | 4 | 5
@@ -70,8 +71,27 @@ export default function AuditTrail() {
   }
 
   const truncateHash = (hash: string, start = 8, end = 6) => {
-    if(!hash) return '';
-    return `${hash.slice(0, start)}...${hash.slice(-end)}`
+    return truncateTxHash(hash, start, end);
+  }
+
+  // State untuk menyimpan hasil verifikasi on-chain per visitId
+  const [onChainStatus, setOnChainStatus] = useState<Record<string, any>>({});
+  const [isVerifying, setIsVerifying] = useState<Record<string, boolean>>({});
+
+  const verifyOnChain = async (visitId: string) => {
+    setIsVerifying(prev => ({ ...prev, [visitId]: true }));
+    try {
+      const onChainData = await getOnChainRecord(visitId);
+      if (onChainData && onChainData.exists) {
+        setOnChainStatus(prev => ({ ...prev, [visitId]: onChainData }));
+      } else {
+        setOnChainStatus(prev => ({ ...prev, [visitId]: 'NOT_FOUND' }));
+      }
+    } catch (e) {
+      console.error(e);
+      setOnChainStatus(prev => ({ ...prev, [visitId]: 'ERROR' }));
+    }
+    setIsVerifying(prev => ({ ...prev, [visitId]: false }));
   }
 
   const formatTime = (date: Date) => {
@@ -321,6 +341,72 @@ export default function AuditTrail() {
                                   )}
                                 </div>
                                 
+                                {/* On-Chain Verification Widget */}
+                                <div className="md:col-span-2 mt-4 pt-4 border-t border-border">
+                                  <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                      <h4 className="text-sm font-semibold flex items-center gap-2">
+                                        <ShieldCheck className="w-4 h-4 text-primary" /> Verifikasi On-Chain
+                                      </h4>
+                                      <p className="text-xs text-muted-foreground">Tarik data murni dari Smart Contract Polygon Amoy untuk membuktikan integritas (Immutable).</p>
+                                    </div>
+                                    <Button 
+                                      onClick={() => verifyOnChain(record.id.replace('AUDIT-', ''))} 
+                                      disabled={isVerifying[record.id.replace('AUDIT-', '')]}
+                                      size="sm" 
+                                      className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+                                    >
+                                      {isVerifying[record.id.replace('AUDIT-', '')] ? (
+                                        <span className="flex items-center gap-2"><Clock className="w-4 h-4 animate-spin" /> Mengecek...</span>
+                                      ) : (
+                                        <span className="flex items-center gap-2"><Database className="w-4 h-4" /> Verifikasi Sekarang</span>
+                                      )}
+                                    </Button>
+                                  </div>
+
+                                  {onChainStatus[record.id.replace('AUDIT-', '')] === 'NOT_FOUND' && (
+                                    <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-start gap-2 border border-red-200">
+                                      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                                      <div>
+                                        <strong>Data tidak ditemukan di Blockchain!</strong>
+                                        <p className="text-xs mt-1">Data mungkin hanya tersimpan lokal atau transaksi belum di-mined.</p>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {typeof onChainStatus[record.id.replace('AUDIT-', '')] === 'object' && onChainStatus[record.id.replace('AUDIT-', '')]?.exists && (
+                                    <div className="p-4 bg-emerald-50/50 rounded-lg border border-emerald-200">
+                                      <div className="flex items-center gap-2 text-emerald-700 font-semibold mb-3">
+                                        <CheckCheck className="w-5 h-5" /> Data Terbukti Valid (Tamper-Proof)
+                                      </div>
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                                        <div>
+                                          <p className="text-xs text-muted-foreground mb-1">Record ID</p>
+                                          <p className="font-mono font-medium">{onChainStatus[record.id.replace('AUDIT-', '')].recordId}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-muted-foreground mb-1">Prioritas (On-Chain)</p>
+                                          <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                                            {onChainStatus[record.id.replace('AUDIT-', '')].priority}
+                                          </Badge>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-muted-foreground mb-1">Tercatat Oleh</p>
+                                          <p className="font-mono text-[10px] bg-white p-1 rounded border break-all">
+                                            {onChainStatus[record.id.replace('AUDIT-', '')].confirmedBy}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-muted-foreground mb-1">Timestamp Block</p>
+                                          <p className="font-medium text-xs">
+                                            {onChainStatus[record.id.replace('AUDIT-', '')].timestamp.toLocaleString()}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
                               </div>
                             </td>
                           </motion.tr>

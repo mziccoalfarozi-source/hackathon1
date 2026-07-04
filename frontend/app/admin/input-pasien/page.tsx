@@ -197,7 +197,9 @@ export default function InputPasien() {
         if (bcErr?.message?.includes("user rejected") || bcErr?.message?.includes("User rejected")) {
            toast.warning("Pencatatan blockchain dibatalkan user. Menggunakan local hash.");
         } else {
-           console.warn("Blockchain log error:", bcErr);
+           const errMsg = bcErr?.message || String(bcErr);
+           toast.error(`Gagal konek MetaMask/Blockchain: ${errMsg}`);
+           console.error("Blockchain log error:", bcErr);
         }
       }
 

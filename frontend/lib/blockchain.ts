@@ -179,7 +179,11 @@ export async function logTriageToBlockchain(
     patientName,
     priority,
     BigInt(Math.round(confidenceBps)),
-    action
+    action,
+    {
+      maxPriorityFeePerGas: ethers.parseUnits("30", "gwei"),
+      maxFeePerGas: ethers.parseUnits("35", "gwei"),
+    }
   );
 
   // Tunggu 1 konfirmasi block
