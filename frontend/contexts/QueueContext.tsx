@@ -49,6 +49,7 @@ interface QueueContextType {
       bpjs_number?: string;
       phone: string;
       address: string;
+      user_id?: string;
     }
   ) => Promise<void>;
   getPatientById: (id: string) => QueuePatient | undefined;
@@ -553,6 +554,7 @@ export function QueueProvider({ children }: { children: ReactNode }) {
       bpjs_number?: string;
       phone: string;
       address: string;
+      user_id?: string;
     }
   ): Promise<void> => {
     const { error } = await supabase

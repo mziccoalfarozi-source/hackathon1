@@ -375,16 +375,6 @@ export default function PasienDashboard() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
-
-                <div className="bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20 flex items-center gap-3 shadow-sm hover:bg-white/20 transition-colors cursor-pointer group">
-                  <div className="bg-white p-1.5 rounded-lg">
-                    <QrCode className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-                  </div>
-                  <div className="text-sm text-left">
-                    <p className="font-semibold text-white group-hover:text-cyan-100 transition-colors">Tunjukkan QR</p>
-                    <p className="text-blue-200 text-xs">Untuk Check-in</p>
-                  </div>
-                </div>
               </div>
             </div>
           </CardContent>

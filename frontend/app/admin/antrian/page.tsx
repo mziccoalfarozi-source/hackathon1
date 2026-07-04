@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,6 +11,7 @@ import {
   AlertTriangle, Save
 } from 'lucide-react'
 import { useQueue } from '@/contexts/QueueContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { ESI_CONFIG } from '@/data/mock'
 import {
   Drawer,
@@ -30,8 +31,16 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 type StatusFilter = 'ALL' | 'WAITING' | 'IN_PROGRESS' | 'COMPLETED'
 type PriorityFilter = 'ALL' | 1 | 2 | 3 | 4 | 5
 
+const calculateAge = (dob: string) => {
+  if (!dob) return '';
+  const diff = Date.now() - new Date(dob).getTime();
+  const age = new Date(diff);
+  return Math.abs(age.getUTCFullYear() - 1970) + ' Tahun';
+};
+
 export default function AntrianAdmin() {
   const { patients, updatePatientIdentity } = useQueue()
+  const { register } = useAuth()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('ALL')
   const [selectedPatient, setSelectedPatient] = useState<QueuePatient | null>(null)
@@ -43,31 +52,38 @@ export default function AntrianAdmin() {
     gender: 'L' as 'L'|'P',
     dob: '',
     phone: '',
-    address: ''
+    address: '',
+    nik: '',
+    bpjs_number: '',
+    email: '',
+    password: ''
   })
   const [isSubmittingDraft, setIsSubmittingDraft] = useState(false)
-
-  // Auto reset form when patient changes
-  if (selectedPatient && isEditingDraft && draftData.name === '' && draftData.phone === '') {
-    setDraftData({
-      name: (selectedPatient.name.startsWith('Pasien Kode') || selectedPatient.name.startsWith('Pasien Draft')) ? '' : selectedPatient.name,
-      gender: selectedPatient.gender,
-      dob: '',
-      phone: selectedPatient.phone === '-' ? '' : selectedPatient.phone,
-      address: selectedPatient.address.includes('belum diisi') ? '' : selectedPatient.address
-    })
-  }
 
   const handleSaveDraft = async () => {
     if (!selectedPatient || !selectedPatient.patientId) return
     setIsSubmittingDraft(true)
     try {
+      let userId: string | undefined = undefined;
+      if (draftData.email && draftData.password) {
+        const res = await register(draftData.name, draftData.email, draftData.password, 'pasien');
+        if (!res.success) {
+          alert(res.error || 'Gagal membuat akun');
+          setIsSubmittingDraft(false);
+          return;
+        }
+        userId = res.userId;
+      }
+      
       await updatePatientIdentity(selectedPatient.id, selectedPatient.patientId, {
         name: draftData.name,
         gender: draftData.gender,
         date_of_birth: draftData.dob || undefined,
+        nik: draftData.nik || undefined,
+        bpjs_number: draftData.bpjs_number || undefined,
         phone: draftData.phone,
-        address: draftData.address
+        address: draftData.address,
+        user_id: userId
       })
       // Update local selected state to remove banner
       setSelectedPatient({...selectedPatient, isDraft: false, name: draftData.name})
@@ -189,7 +205,10 @@ export default function AntrianAdmin() {
 
           return (
             <Card key={patient.id} 
-                  onClick={() => setSelectedPatient(patient)}
+                  onClick={() => {
+                    setSelectedPatient(patient)
+                    setIsEditingDraft(false)
+                  }}
                   className={`border shadow-sm hover:shadow-md transition-shadow cursor-pointer ${cfg.bgLight} border-${cfg.color.replace('bg-', '')}/30`}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
@@ -275,7 +294,20 @@ export default function AntrianAdmin() {
                           <p className="text-sm text-red-600">Pasien ini menggunakan jalur bypass. Mohon lengkapi identitasnya.</p>
                         </div>
                       </div>
-                      <Button onClick={() => setIsEditingDraft(true)} className="bg-red-600 hover:bg-red-700 w-full sm:w-auto">
+                      <Button onClick={() => {
+                        setDraftData({
+                          name: (selectedPatient.name.startsWith('Pasien Kode') || selectedPatient.name.startsWith('Pasien Draft')) ? '' : selectedPatient.name,
+                          gender: selectedPatient.gender,
+                          dob: '',
+                          phone: selectedPatient.phone === '-' ? '' : selectedPatient.phone,
+                          address: selectedPatient.address.includes('belum diisi') ? '' : selectedPatient.address,
+                          nik: selectedPatient.nik || '',
+                          bpjs_number: selectedPatient.bpjs_number || '',
+                          email: '',
+                          password: ''
+                        })
+                        setIsEditingDraft(true)
+                      }} className="bg-red-600 hover:bg-red-700 w-full sm:w-auto">
                         Lengkapi Data Identitas
                       </Button>
                     </div>
@@ -285,38 +317,71 @@ export default function AntrianAdmin() {
                     <Card className="max-w-2xl mx-auto border-red-200">
                       <CardHeader className="bg-red-50/50 border-b border-red-100 pb-4">
                         <CardTitle className="text-red-700 text-lg flex items-center gap-2">
-                          <UserPlus className="w-5 h-5" /> Lengkapi Data Identitas Pasien
+                          <UserPlus className="w-5 h-5" /> Registrasi Pasien Baru
                         </CardTitle>
+                        <CardDescription className="text-red-600/80">
+                          Daftarkan pasien ke database Rumah Sakit 212 dan buatkan akun login
+                        </CardDescription>
                       </CardHeader>
-                      <CardContent className="pt-6 space-y-4">
+                      <CardContent className="pt-6 space-y-4" onPointerDown={(e) => e.stopPropagation()}>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2 col-span-2 sm:col-span-1">
-                            <Label>Nama Lengkap *</Label>
-                            <Input value={draftData.name} onChange={e => setDraftData({...draftData, name: e.target.value})} placeholder="Nama Pasien" />
+                            <Label>Nama Lengkap <span className="text-red-500">*</span></Label>
+                            <Input value={draftData.name} onChange={e => setDraftData({...draftData, name: e.target.value})} placeholder="Nama pasien" />
                           </div>
                           <div className="space-y-2 col-span-2 sm:col-span-1">
-                            <Label>Tanggal Lahir *</Label>
+                            <Label>Tanggal Lahir <span className="text-red-500">*</span></Label>
                             <Input type="date" value={draftData.dob} onChange={e => setDraftData({...draftData, dob: e.target.value})} />
                           </div>
                           <div className="space-y-2 col-span-2 sm:col-span-1">
-                            <Label>No Telepon *</Label>
-                            <Input value={draftData.phone} onChange={e => setDraftData({...draftData, phone: e.target.value})} placeholder="08..." />
+                            <Label>Usia (Otomatis)</Label>
+                            <Input value={draftData.dob ? calculateAge(draftData.dob) : ''} disabled placeholder="Dihitung otomatis" className="bg-muted/50" />
                           </div>
                           <div className="space-y-2 col-span-2 sm:col-span-1">
-                            <Label>Jenis Kelamin</Label>
+                            <Label>Jenis Kelamin <span className="text-red-500">*</span></Label>
                             <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" value={draftData.gender} onChange={e => setDraftData({...draftData, gender: e.target.value as 'L'|'P'})}>
                               <option value="L">Laki-laki</option>
                               <option value="P">Perempuan</option>
                             </select>
                           </div>
+                          <div className="space-y-2 col-span-2 sm:col-span-1">
+                            <Label>NIK <span className="text-muted-foreground font-normal text-xs">(Tidak Wajib)</span></Label>
+                            <Input value={draftData.nik || ''} onChange={e => setDraftData({...draftData, nik: e.target.value})} placeholder="Tidak Wajib Diisi" />
+                          </div>
+                          <div className="space-y-2 col-span-2 sm:col-span-1">
+                            <Label>No. BPJS <span className="text-muted-foreground font-normal text-xs">(Tidak Wajib)</span></Label>
+                            <Input value={draftData.bpjs_number || ''} onChange={e => setDraftData({...draftData, bpjs_number: e.target.value})} placeholder="Tidak Wajib Diisi" />
+                          </div>
+                          <div className="space-y-2 col-span-2 sm:col-span-1">
+                            <Label>No. Telepon <span className="text-red-500">*</span></Label>
+                            <Input value={draftData.phone} onChange={e => setDraftData({...draftData, phone: e.target.value})} placeholder="08xxx" />
+                          </div>
+                          <div className="hidden sm:block col-span-1"></div>
                           <div className="space-y-2 col-span-2">
-                            <Label>Alamat Lengkap *</Label>
-                            <Textarea value={draftData.address} onChange={e => setDraftData({...draftData, address: e.target.value})} placeholder="Alamat lengkap..." rows={2} />
+                            <Label>Alamat Lengkap <span className="text-red-500">*</span></Label>
+                            <Textarea value={draftData.address} onChange={e => setDraftData({...draftData, address: e.target.value})} placeholder="Alamat lengkap" rows={3} />
                           </div>
                         </div>
-                        <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
+
+                        <div className="my-6 border-t"></div>
+
+                        <div className="space-y-4">
+                          <h3 className="font-semibold text-sm">Informasi Akun Pasien (Untuk Login)</h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2 col-span-2 sm:col-span-1">
+                              <Label>Email <span className="text-red-500">*</span></Label>
+                              <Input type="email" value={draftData.email} onChange={e => setDraftData({...draftData, email: e.target.value})} placeholder="email@pasien.com" />
+                            </div>
+                            <div className="space-y-2 col-span-2 sm:col-span-1">
+                              <Label>Password Default <span className="text-red-500">*</span></Label>
+                              <Input type="password" value={draftData.password} onChange={e => setDraftData({...draftData, password: e.target.value})} placeholder="password123" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
                           <Button variant="outline" onClick={() => setIsEditingDraft(false)}>Batal</Button>
-                          <Button onClick={handleSaveDraft} disabled={isSubmittingDraft || !draftData.name || !draftData.dob || !draftData.phone || !draftData.address} className="bg-red-600 hover:bg-red-700">
+                          <Button onClick={handleSaveDraft} disabled={isSubmittingDraft || !draftData.name || !draftData.dob || !draftData.phone || !draftData.address || !draftData.email || !draftData.password} className="bg-red-600 hover:bg-red-700">
                             {isSubmittingDraft ? 'Menyimpan...' : 'Simpan Data Pasien'}
                           </Button>
                         </div>
