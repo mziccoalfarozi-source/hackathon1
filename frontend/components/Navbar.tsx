@@ -48,10 +48,10 @@ export default function Navbar() {
               whileTap={{ scale: 0.95 }}
               className="relative w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20 flex-shrink-0"
             >
-              <Image src="/Logo.png" alt="Logo Rumah Sakit 212" fill sizes="40px" className="object-cover" />
+              <Image src="/Logo.png" alt="Logo Vitas" fill sizes="40px" className="object-cover" />
             </motion.div>
             <div className="flex flex-col">
-              <span className="text-base font-bold text-foreground leading-tight tracking-tight">Rumah Sakit 212</span>
+              <span className="text-base font-bold text-foreground leading-tight tracking-tight">Vitas</span>
               <span className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight font-medium">Rumah Sakit Terpercaya</span>
             </div>
           </Link>

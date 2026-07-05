@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rumah Sakit 212 Triage & Hospital Management",
+  title: "Vitas Triage & Hospital Management",
   description: "Sistem Manajemen Antrian dan Triage Rumah Sakit",
   icons: {
     icon: "/Logo.png",

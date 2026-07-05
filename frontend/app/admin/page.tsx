@@ -35,7 +35,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <SlideUp>
         <h1 className="text-2xl font-bold text-foreground">Dashboard Admin</h1>
-        <p className="text-sm text-muted-foreground mt-1">Kelola pendaftaran dan antrian pasien Rumah Sakit 212</p>
+        <p className="text-sm text-muted-foreground mt-1">Kelola pendaftaran dan antrian pasien Vitas</p>
       </SlideUp>
 
       {/* Quick Actions */}

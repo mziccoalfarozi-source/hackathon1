@@ -125,7 +125,7 @@ export default function Register() {
               <h2 className="text-2xl font-bold text-foreground mb-2">Menunggu Verifikasi</h2>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 Pendaftaran Anda telah berhasil dikirim. Akun Anda akan diaktifkan setelah
-                diverifikasi oleh <span className="font-semibold text-foreground">Admin Rumah Sakit 212</span>.
+                diverifikasi oleh <span className="font-semibold text-foreground">Admin Vitas</span>.
               </p>
             </div>
             <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-left space-y-2">
@@ -190,13 +190,13 @@ export default function Register() {
               }}
               className="relative w-14 h-14 mx-auto rounded-2xl overflow-hidden mb-4 shadow-xl shadow-emerald-500/20 flex-shrink-0"
             >
-              <Image src="/Logo.png" alt="Logo RS 212" fill sizes="56px" className="object-cover" />
+              <Image src="/Logo.png" alt="Logo Vitas" fill sizes="56px" className="object-cover" />
             </motion.div>
             <CardTitle className="text-2xl font-bold text-card-foreground">
               Daftar Akun Baru
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Buat akun untuk mengakses sistem Rumah Sakit 212
+              Buat akun untuk mengakses sistem Vitas
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5 pt-4">

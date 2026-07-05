@@ -33,6 +33,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
 
+
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50 to-white dark:from-slate-900 dark:via-slate-800 dark:to-emerald-900">
         <div className="absolute inset-0 opacity-10">
@@ -137,7 +138,7 @@ export default function Home() {
       <div className="bg-slate-50 dark:bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <SlideUp className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 rounded-full px-4 py-1.5 mb-4 uppercase tracking-wider">Mengapa Rumah Sakit 212?</span>
+            <span className="inline-block text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 rounded-full px-4 py-1.5 mb-4 uppercase tracking-wider">Mengapa Vitas?</span>
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Keunggulan Kami</h2>
             <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
               Menggabungkan teknologi terdepan dengan pelayanan kesehatan yang manusiawi
@@ -314,7 +315,7 @@ export default function Home() {
                         <MapPin className="w-7 h-7 text-white" />
                       </div>
                     </motion.div>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Rumah Sakit 212</p>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Vitas</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[200px] mx-auto leading-relaxed">Jl. Peta, Kahuripan, Kec. Tawang,<br/>Kab. Tasikmalaya</p>
                     <span className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 transition-colors">
                       <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
@@ -346,16 +347,16 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
               <div className="relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
-                <Image src="/Logo.png" alt="Logo Rumah Sakit 212" fill sizes="32px" className="object-cover" />
+                <Image src="/Logo.png" alt="Logo Vitas" fill sizes="32px" className="object-cover" />
               </div>
               <div>
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Rumah Sakit 212</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Vitas</p>
                 <p className="text-[10px] text-slate-600 dark:text-slate-400">Rumah Sakit Terpercaya</p>
               </div>
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-400">
-              © 2026 Rumah Sakit 212. Seluruh hak cipta dilindungi.
+              © 2026 Vitas. Seluruh hak cipta dilindungi.
             </p>
           </div>
         </div>

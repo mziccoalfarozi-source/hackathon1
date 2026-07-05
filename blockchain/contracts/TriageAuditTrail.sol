@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 /**
  * @title TriageAuditTrail
  * @notice Smart contract untuk mencatat hasil triage pasien secara immutable
- *         sebagai bagian dari sistem X-TRACE (Rumah Sakit 212).
+ *         sebagai bagian dari sistem X-TRACE (Vitas).
  * @dev Setiap konfirmasi triage oleh admin/dokter akan memanggil logTriage().
  *      Data yang dicatat: visitId (dari Supabase), nama pasien, prioritas AI,
  *      confidence score (basis points), dan aksi yang dilakukan.

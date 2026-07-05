@@ -117,7 +117,7 @@ export default function NotFound() {
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
             <HeartPulse className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-xs text-muted-foreground font-medium">Rumah Sakit 212 Rumah Sakit Terpercaya</span>
+          <span className="text-xs text-muted-foreground font-medium">Vitas Rumah Sakit Terpercaya</span>
         </motion.div>
       </div>
     </div>

@@ -625,7 +625,7 @@ export default function InputPasien() {
                   Registrasi Pasien Baru
                 </CardTitle>
                 <CardDescription>
-                  Daftarkan pasien ke database Rumah Sakit 212 dan buatkan akun login
+                  Daftarkan pasien ke database Vitas dan buatkan akun login
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">

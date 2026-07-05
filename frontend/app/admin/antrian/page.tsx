@@ -320,7 +320,7 @@ export default function AntrianAdmin() {
                           <UserPlus className="w-5 h-5" /> Registrasi Pasien Baru
                         </CardTitle>
                         <CardDescription className="text-red-600/80">
-                          Daftarkan pasien ke database Rumah Sakit 212 dan buatkan akun login
+                          Daftarkan pasien ke database Vitas dan buatkan akun login
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="pt-6 space-y-4" onPointerDown={(e) => e.stopPropagation()}>
