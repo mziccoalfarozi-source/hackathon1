@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { QueueProvider } from "@/contexts/QueueContext";
 import { PatientProvider } from "@/contexts/PatientContext";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import Navbar from "@/components/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,7 @@ export default function RootLayout({
           <AuthProvider>
             <PatientProvider>
               <QueueProvider>
+                <Navbar />
                 {children}
               </QueueProvider>
             </PatientProvider>
