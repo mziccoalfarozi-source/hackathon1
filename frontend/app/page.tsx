@@ -26,19 +26,19 @@ export default function Home() {
   }, [])
 
   const services = [
-    { icon: Ambulance, title: 'Unit Gawat Darurat', desc: 'Layanan darurat 24 jam dengan dokter spesialis siaga', color: 'bg-red-500' },
-    { icon: HeartPulse, title: 'Rawat Jalan', desc: 'Pemeriksaan umum dan konsultasi dengan jadwal fleksibel', color: 'bg-emerald-500' },
-    { icon: Microscope, title: 'Laboratorium', desc: 'Pemeriksaan laboratorium lengkap dan akurat', color: 'bg-blue-500' },
-    { icon: FlaskConical, title: 'Farmasi', desc: 'Apotek lengkap dengan obat berkualitas', color: 'bg-violet-500' },
-    { icon: Baby, title: 'Poli Anak', desc: 'Layanan kesehatan khusus anak dan balita', color: 'bg-pink-500' },
-    { icon: Brain, title: 'Poli Saraf', desc: 'Konsultasi dan penanganan gangguan neurologi', color: 'bg-amber-500' },
+    { icon: Users, title: 'Admin Pendaftaran', desc: 'Input pasien terintegrasi dengan pemrosesan teks NLP otomatis', color: 'bg-blue-500' },
+    { icon: Brain, title: 'AI Triage Engine', desc: 'Sistem prediksi ESI Level (1-5) berbasis model Machine Learning', color: 'bg-emerald-500' },
+    { icon: Stethoscope, title: 'Dashboard Dokter', desc: 'Antarmuka CDSS untuk konfirmasi diagnosis dan penanganan medis', color: 'bg-indigo-500' },
+    { icon: Shield, title: 'Blockchain Security', desc: 'Sistem dual-log (Initial & Final) untuk keamanan dan audit medis', color: 'bg-violet-500' },
+    { icon: Sparkles, title: 'Explainable AI', desc: 'Analisis SHAP values untuk menjelaskan parameter prioritas triase', color: 'bg-amber-500' },
+    { icon: Clock, title: 'Live Queue System', desc: 'Manajemen antrian pasien real-time dengan estimasi waktu tunggu', color: 'bg-pink-500' },
   ]
 
   const advantages = [
-    { icon: Stethoscope, title: 'AI-Powered Triage', desc: 'Sistem triase berbasis AI untuk prioritas pasien yang lebih akurat' },
-    { icon: Shield, title: 'Blockchain Audit', desc: 'Rekam medis tercatat secara immutable di blockchain' },
-    { icon: Users, title: 'Tim Profesional', desc: 'Dokter spesialis berpengalaman dan tenaga medis terlatih' },
-    { icon: Clock, title: 'Layanan 24 Jam', desc: 'Unit gawat darurat siap melayani sepanjang hari' },
+    { icon: Brain, title: 'NLP Text Extraction', desc: 'Ekstraksi otomatis tanda vital & gejala dari narasi keluhan pasien.' },
+    { icon: Stethoscope, title: 'AI-Powered Triage', desc: 'Sistem CDSS triase berbasis AI (XGBoost) untuk penentuan ESI Level.' },
+    { icon: Shield, title: 'Blockchain Audit Log', desc: 'Pencatatan rekam medis & triase secara immutable (Dual-log).' },
+    { icon: Sparkles, title: 'Explainable AI (SHAP)', desc: 'Menampilkan transparansi alasan model AI dalam mengambil keputusan medis.' },
   ]
 
   const statIcons = [Users, Stethoscope, Sparkles, Clock]
@@ -160,8 +160,7 @@ export default function Home() {
 
             <SlideUp delay={0.35}>
               <p className="text-lg text-slate-600 dark:text-slate-300 mb-10 leading-relaxed max-w-2xl">
-                Rumah Sakit 212 hadir dengan inovasi Clinical Decision Support System (CDSS) berbasis AI untuk triase pasien yang lebih cepat dan akurat.
-                Didukung sistem blockchain untuk rekam medis yang transparan dan aman.
+                Aplikasi Clinical Decision Support System (CDSS) berbasis AI dengan fitur Natural Language Processing (NLP) untuk triase pasien cepat & akurat. Didukung sistem Blockchain untuk audit medis transparan.
               </p>
             </SlideUp>
 
@@ -268,10 +267,10 @@ export default function Home() {
       <div id="layanan" className="bg-slate-50 dark:bg-background scroll-mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <SlideUp className="text-center mb-14">
-            <span className="inline-block text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 rounded-full px-4 py-1.5 mb-4 uppercase tracking-wider">Layanan</span>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Layanan Kesehatan Kami</h2>
+            <span className="inline-block text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 rounded-full px-4 py-1.5 mb-4 uppercase tracking-wider">Fitur Aplikasi</span>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Fitur Utama Sistem</h2>
             <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-              Pelayanan kesehatan komprehensif untuk seluruh keluarga
+              Sistem medis komprehensif terintegrasi kecerdasan buatan
             </p>
           </SlideUp>
 
@@ -312,10 +311,10 @@ export default function Home() {
 
         <StaggerContainer className="grid md:grid-cols-4 gap-6" staggerDelay={0.15}>
           {[
-            { step: '01', title: 'Pendaftaran', desc: 'Admin mendaftarkan pasien dan menginput data keluhan serta vital sign.', icon: Users, color: 'from-blue-500 to-indigo-500' },
-            { step: '02', title: 'Triage AI', desc: 'Sistem AI menganalisis data dan menentukan prioritas antrian pasien.', icon: Brain, color: 'from-violet-500 to-purple-500' },
-            { step: '03', title: 'Pemeriksaan', desc: 'Dokter memeriksa pasien, mendiagnosis, dan meresepkan obat.', icon: Stethoscope, color: 'from-emerald-500 to-teal-500' },
-            { step: '04', title: 'Farmasi', desc: 'Apoteker menyiapkan obat sesuai resep dan menyerahkan ke pasien.', icon: FlaskConical, color: 'from-amber-500 to-orange-500' },
+            { step: '01', title: 'Input Narasi (NLP)', desc: 'Admin mengetik keluhan, AI mengekstrak data vital & gejala otomatis.', icon: Users, color: 'from-blue-500 to-indigo-500' },
+            { step: '02', title: 'AI Triage', desc: 'Model AI memprediksi tingkat kegawatan (ESI Level 1-5).', icon: Brain, color: 'from-violet-500 to-purple-500' },
+            { step: '03', title: 'Pemeriksaan', desc: 'Dokter memverifikasi hasil AI dan memberikan penanganan medis.', icon: Stethoscope, color: 'from-emerald-500 to-teal-500' },
+            { step: '04', title: 'Blockchain Log', desc: 'Data triase awal & final disimpan permanen di blockchain.', icon: Shield, color: 'from-amber-500 to-orange-500' },
           ].map((item) => {
             const Icon = item.icon
             return (
