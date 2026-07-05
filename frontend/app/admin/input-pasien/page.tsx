@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,18 +31,14 @@ import {
   Wind,
   HeartPulse,
   Clock,
-  Pill,
   AlertTriangle,
   ChevronRight,
   ChevronLeft,
   Send,
-  RotateCcw,
   Check,
   Brain,
   CircleCheckBig,
   Search,
-  Zap,
-  UserX,
 } from "lucide-react";
 import type { PatientData, QueuePatient, RegisteredPatient, TriageFormInput } from "@/types";
 import {
@@ -55,7 +51,8 @@ import { usePatients } from "@/contexts/PatientContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlideUp } from "@/components/motion";
-import { callTriageApi, callSkipCritical } from "@/lib/api";
+import { callTriageApi, callSkipCritical, callParseText, type ParseTextResult } from "@/lib/api";
+import { MessageSquareText, Sparkles, Loader2 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { logTriageToBlockchain, connectWallet, toBasisPoints } from "@/lib/blockchain";
 
@@ -78,6 +75,12 @@ export default function InputPasien() {
 
   const [showResult, setShowResult] = useState(false);
   const [lastAdded, setLastAdded] = useState<QueuePatient | null>(null);
+
+  // NLP Parser state
+  const [nlpText, setNlpText] = useState("");
+  const [nlpResult, setNlpResult] = useState<ParseTextResult | null>(null);
+  const [isParsingNlp, setIsParsingNlp] = useState(false);
+  const [showNlpInput, setShowNlpInput] = useState(false);
 
   const totalSteps = 2;
 
@@ -163,11 +166,51 @@ export default function InputPasien() {
     }
   };
 
-  const updateTriageInput = (field: keyof TriageFormInput, value: any) => {
+  const updateTriageInput = (field: keyof TriageFormInput, value: string | number | boolean) => {
     setTriageInput((prev) => ({ ...prev, [field]: value }));
   };
 
   const { map, shock_index, news2 } = computeDerivedFeatures(triageInput);
+
+  // NLP Parser handler
+  const handleNlpParse = async () => {
+    if (!nlpText.trim()) return;
+    setIsParsingNlp(true);
+    try {
+      const result = await callParseText(nlpText);
+      setNlpResult(result);
+
+      // Auto-fill form with extracted vital signs
+      const vs = result.vital_signs;
+      const updates: Partial<TriageFormInput> = {};
+      if (vs.systolic_bp) updates.systolic_bp = vs.systolic_bp;
+      if (vs.diastolic_bp) updates.diastolic_bp = vs.diastolic_bp;
+      if (vs.heart_rate) updates.heart_rate = vs.heart_rate;
+      if (vs.respiratory_rate) updates.respiratory_rate = vs.respiratory_rate;
+      if (vs.spo2) updates.spo2 = vs.spo2;
+      if (vs.temperature_c) updates.temperature_c = vs.temperature_c;
+      if (vs.gcs_total) updates.gcs_total = vs.gcs_total;
+      if (vs.pain_score !== undefined) updates.pain_score = vs.pain_score;
+      if (vs.age) updates.age = vs.age;
+
+      // Update chief_complaint with the original text
+      updates.chief_complaint = nlpText;
+
+      setTriageInput(prev => ({ ...prev, ...updates }));
+
+      const filledCount = Object.keys(vs).length;
+      if (filledCount > 0) {
+        toast.success(`${filledCount} field berhasil diekstrak dari teks!`);
+      } else {
+        toast.warning('Tidak ada vital sign yang berhasil diekstrak dari teks.');
+      }
+    } catch (err) {
+      console.error('NLP parse error:', err);
+      toast.error('Gagal memproses teks. Pastikan backend AI berjalan.');
+    } finally {
+      setIsParsingNlp(false);
+    }
+  };
 
   const handleSubmit = async (isSkip: boolean = false) => {
     setIsSubmitting(true);
@@ -195,8 +238,8 @@ export default function InputPasien() {
         );
         realTxHash = bcResult.txHash;
         toast.success(`Triage tercatat di blockchain! Block #${bcResult.blockNumber}`);
-      } catch (bcErr: any) {
-        const errMsg = bcErr?.message || String(bcErr);
+      } catch (bcErr: unknown) {
+        const errMsg = (bcErr as Error)?.message || String(bcErr);
         const lowerErr = errMsg.toLowerCase();
         
         if (lowerErr.includes("user rejected")) {
@@ -360,6 +403,16 @@ export default function InputPasien() {
                 <p className="text-muted-foreground mb-1">Nomor Antrian</p>
                 <p className="text-2xl font-bold text-foreground">{lastAdded.queueNumber}</p>
               </div>
+              {lastAdded.triageResult.confidence !== undefined && !lastAdded.triageResult.is_skip_triage && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 text-sm border border-blue-200 dark:border-blue-900/50 mt-3">
+                  <p className="text-muted-foreground mb-1">AI Confidence</p>
+                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                    {typeof lastAdded.triageResult.confidence === 'number' 
+                      ? (lastAdded.triageResult.confidence * 100).toFixed(1) + '%' 
+                      : lastAdded.triageResult.confidence}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -375,16 +428,16 @@ export default function InputPasien() {
               </p>
               
               {lastAdded.triageResult.shap_features && lastAdded.triageResult.shap_features.length > 0 && (
-                <div className="h-40 mt-4 border border-border rounded-xl p-3 bg-muted/30">
+                <div className="h-[300px] mt-4 border border-border rounded-xl p-3 bg-muted/30">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={lastAdded.triageResult.shap_features.map(f => ({ name: f.label, value: Math.abs(f.shap_value), isNeg: f.shap_value < 0 }))}
-                      layout="vertical" margin={{ left: 10, right: 10, top: 0, bottom: 0 }}
+                      margin={{ left: 0, right: 0, top: 10, bottom: 90 }}
                     >
-                      <XAxis type="number" hide />
-                      <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
+                      <XAxis type="category" dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-45} textAnchor="end" height={100} />
+                      <YAxis type="number" hide />
                       <Tooltip formatter={(v: number) => [v.toFixed(2), 'Impact']} />
-                      <Bar dataKey="value" radius={4}>
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                         {lastAdded.triageResult.shap_features.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.shap_value < 0 ? '#ef4444' : '#f59e0b'} />
                         ))}
@@ -759,6 +812,138 @@ export default function InputPasien() {
                 >
                   Bypass (ESI 1)
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* NLP Auto-Fill Section */}
+            <Card className="border-violet-200 dark:border-violet-900/50 bg-gradient-to-r from-violet-50/50 to-blue-50/50 dark:from-violet-950/20 dark:to-blue-950/20 mb-6 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+                      <MessageSquareText className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm text-foreground">Input Teks Bebas (NLP)</h3>
+                      <p className="text-xs text-muted-foreground">Ketik narasi singkat, AI akan ekstrak vital sign otomatis</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNlpInput(!showNlpInput)}
+                    className="text-violet-600 hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:bg-violet-900/30"
+                  >
+                    {showNlpInput ? 'Tutup' : 'Buka'}
+                  </Button>
+                </div>
+
+                <AnimatePresence>
+                  {showNlpInput && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="space-y-3 pt-2">
+                        <Textarea
+                          value={nlpText}
+                          onChange={(e) => setNlpText(e.target.value)}
+                          placeholder='Contoh: "pasien pusing, mual, TD 170/100, nadi 110, spo2 91, demam 3 hari, GCS 14"'
+                          rows={3}
+                          className="bg-white dark:bg-background border-violet-200 dark:border-violet-800 focus:border-violet-400"
+                        />
+                        <div className="flex items-center gap-3">
+                          <Button
+                            onClick={handleNlpParse}
+                            disabled={isParsingNlp || !nlpText.trim()}
+                            className="gap-2 bg-violet-600 hover:bg-violet-700 text-white"
+                            size="sm"
+                          >
+                            {isParsingNlp ? (
+                              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Memproses...</>
+                            ) : (
+                              <><Sparkles className="w-3.5 h-3.5" /> Ekstrak Otomatis</>
+                            )}
+                          </Button>
+                          <span className="text-xs text-muted-foreground">Powered by NLP Parser Indonesia</span>
+                        </div>
+
+                        {/* NLP Results */}
+                        {nlpResult && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="space-y-3 pt-2 border-t border-violet-100 dark:border-violet-900/50"
+                          >
+                            {/* Extracted vital signs */}
+                            {Object.keys(nlpResult.vital_signs).length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 mb-1.5">Vital Sign Terekstrak:</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {Object.entries(nlpResult.vital_signs).map(([key, val]) => (
+                                    <Badge key={key} className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 hover:bg-emerald-200 text-xs">
+                                      {key}: {val}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Detected symptoms */}
+                            {nlpResult.gejala_terdeteksi.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-amber-700 dark:text-amber-400 mb-1.5">Gejala Terdeteksi:</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {nlpResult.gejala_terdeteksi.map((g, i) => (
+                                    <Badge key={i} variant="outline" className="text-xs border-amber-300 text-amber-700 dark:border-amber-800 dark:text-amber-400">
+                                      {g.gejala} (sev: {g.severity})
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Negated symptoms */}
+                            {nlpResult.gejala_dinegasikan.length > 0 && (
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground mb-1.5">Gejala Disangkal:</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {nlpResult.gejala_dinegasikan.map((g, i) => (
+                                    <Badge key={i} variant="outline" className="text-xs line-through opacity-60">
+                                      {g}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Missing fields warning */}
+                            {nlpResult.field_masih_kosong.length > 0 && (
+                              <div className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-2.5 border border-amber-200 dark:border-amber-900/50">
+                                <p className="text-xs text-amber-800 dark:text-amber-300">
+                                  <AlertTriangle className="w-3 h-3 inline mr-1" />
+                                  Field belum terekstrak (isi manual): {nlpResult.field_masih_kosong.join(', ')}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Warnings */}
+                            {nlpResult.peringatan.length > 0 && (
+                              <div className="space-y-1">
+                                {nlpResult.peringatan.map((w, i) => (
+                                  <p key={i} className="text-xs text-red-600 dark:text-red-400">{w}</p>
+                                ))}
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </CardContent>
             </Card>
 

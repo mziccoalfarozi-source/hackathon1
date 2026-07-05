@@ -109,7 +109,7 @@ export default function Login() {
               }}
               className="relative w-14 h-14 mx-auto rounded-2xl overflow-hidden mb-4 shadow-xl shadow-emerald-500/20 flex-shrink-0"
             >
-              <Image src="/logo.png" alt="Logo RS 212" fill sizes="56px" className="object-cover" />
+              <Image src="/Logo.png" alt="Logo RS 212" fill sizes="56px" className="object-cover" />
             </motion.div>
             <CardTitle className="text-2xl font-bold text-card-foreground">
               Masuk ke Rumah Sakit 212

@@ -302,7 +302,7 @@ export default function AntrianAdmin() {
                           phone: selectedPatient.phone === '-' ? '' : selectedPatient.phone,
                           address: selectedPatient.address.includes('belum diisi') ? '' : selectedPatient.address,
                           nik: selectedPatient.nik || '',
-                          bpjs_number: selectedPatient.bpjs_number || '',
+                          bpjs_number: (selectedPatient as any).bpjs_number || '',
                           email: '',
                           password: ''
                         })
@@ -390,7 +390,7 @@ export default function AntrianAdmin() {
                   ) : (
                     <div className="grid md:grid-cols-2 gap-6">
                     {/* Left Column */}
-                    <div className="space-y-6">
+                    <div className="flex flex-col gap-6">
                       {/* Clinical Data */}
                       <Card>
                         <CardHeader className="pb-3 border-b">
@@ -421,13 +421,13 @@ export default function AntrianAdmin() {
                       </Card>
 
                       {/* Blockchain Logs */}
-                      <Card>
+                      <Card className="flex-1 flex flex-col">
                         <CardHeader className="pb-3 border-b">
                           <CardTitle className="text-base flex items-center gap-2">
                             <Link2 className="w-4 h-4 text-slate-500" /> Dual-Log Blockchain
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-4 space-y-4">
+                        <CardContent className="pt-4 flex-1 flex flex-col justify-center space-y-4">
                           <div className="flex items-start gap-3">
                             <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                               <Check className="w-4 h-4 text-emerald-600" />
@@ -473,23 +473,25 @@ export default function AntrianAdmin() {
                           </p>
                           
                           {selectedPatient.triageResult.shap_features && selectedPatient.triageResult.shap_features.length > 0 && (
-                            <div className="flex-1 min-h-[200px] border border-border rounded-xl p-3 bg-card mt-auto">
-                              <p className="text-xs font-semibold text-center mb-2 text-muted-foreground">Fitur Penentu ESI</p>
-                              <ResponsiveContainer width="100%" height="100%">
+                            <div className="flex-1 mt-4 border border-border rounded-xl p-3 bg-card min-h-[300px] flex flex-col">
+                              <p className="text-xs font-semibold text-center mb-2 text-muted-foreground shrink-0">Fitur Penentu ESI</p>
+                              <div className="flex-1 w-full min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                   data={selectedPatient.triageResult.shap_features.map(f => ({ name: f.label, value: Math.abs(f.shap_value), isNeg: f.shap_value < 0 }))}
-                                  layout="vertical" margin={{ left: 10, right: 10, top: 0, bottom: 0 }}
+                                  margin={{ left: 0, right: 0, top: 10, bottom: 90 }}
                                 >
-                                  <XAxis type="number" hide />
-                                  <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 10 }} />
+                                  <XAxis type="category" dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-45} textAnchor="end" height={100} />
+                                  <YAxis type="number" hide />
                                   <Tooltip formatter={(v: number) => [v.toFixed(2), 'Impact']} />
-                                  <Bar dataKey="value" radius={4}>
+                                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                                     {selectedPatient.triageResult.shap_features.map((entry, index) => (
                                       <Cell key={`cell-${index}`} fill={entry.shap_value < 0 ? '#ef4444' : '#f59e0b'} />
                                     ))}
                                   </Bar>
                                 </BarChart>
-                              </ResponsiveContainer>
+                                </ResponsiveContainer>
+                              </div>
                             </div>
                           )}
                         </CardContent>

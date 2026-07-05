@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -15,6 +15,15 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const services = [
     { icon: Ambulance, title: 'Unit Gawat Darurat', desc: 'Layanan darurat 24 jam dengan dokter spesialis siaga', color: 'bg-red-500' },
@@ -37,7 +46,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled 
+          ? 'bg-transparent border-transparent backdrop-blur-sm shadow-sm' 
+          : 'bg-background/95 backdrop-blur-md border-b border-border shadow-sm'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" onClick={(e) => {
@@ -51,7 +64,7 @@ export default function Home() {
                 whileTap={{ scale: 0.95 }}
                 className="relative w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20 flex-shrink-0"
               >
-                <Image src="/logo.png" alt="Logo Rumah Sakit 212" fill sizes="40px" className="object-cover" />
+                <Image src="/Logo.png" alt="Logo Rumah Sakit 212" fill sizes="40px" className="object-cover" />
               </motion.div>
               <div className="flex flex-col">
                 <span className="text-base font-bold text-foreground leading-tight tracking-tight">Rumah Sakit 212</span>
@@ -137,13 +150,6 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
           <div className="max-w-3xl">
             <SlideUp delay={0.1}>
-              <div className="inline-flex items-center gap-2 bg-emerald-500/15 border border-emerald-400/25 rounded-full px-4 py-1.5 mb-6 backdrop-blur-sm">
-                <PulseDot className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-sm text-emerald-300 font-medium">Sistem Aktif AI Triage & Blockchain</span>
-              </div>
-            </SlideUp>
-
-            <SlideUp delay={0.2}>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white mb-6 leading-[1.1] tracking-tight">
                 Pelayanan Kesehatan{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
@@ -154,7 +160,7 @@ export default function Home() {
 
             <SlideUp delay={0.35}>
               <p className="text-lg text-slate-600 dark:text-slate-300 mb-10 leading-relaxed max-w-2xl">
-                Rumah Sakit 212 hadir dengan teknologi AI untuk triase pasien yang lebih cepat dan akurat.
+                Rumah Sakit 212 hadir dengan inovasi Clinical Decision Support System (CDSS) berbasis AI untuk triase pasien yang lebih cepat dan akurat.
                 Didukung sistem blockchain untuk rekam medis yang transparan dan aman.
               </p>
             </SlideUp>
@@ -435,7 +441,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
               <div className="relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
-                <Image src="/logo.png" alt="Logo Rumah Sakit 212" fill sizes="32px" className="object-cover" />
+                <Image src="/Logo.png" alt="Logo Rumah Sakit 212" fill sizes="32px" className="object-cover" />
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Rumah Sakit 212</p>

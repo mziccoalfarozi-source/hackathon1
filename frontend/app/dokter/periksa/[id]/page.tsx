@@ -32,6 +32,8 @@ import {
   FlaskConical,
   AlertTriangle,
   Link2,
+  ShieldCheck,
+  CheckCircle2,
 } from "lucide-react";
 import type { Prescription, EsiLevel } from "@/types";
 import { useQueue } from "@/contexts/QueueContext";
@@ -69,6 +71,7 @@ export default function PeriksaPasien() {
   const [finalEsi, setFinalEsi] = useState<EsiLevel>(initialEsi as EsiLevel);
   const [isEsiChanged, setIsEsiChanged] = useState(false);
   const [doctorNotes, setDoctorNotes] = useState("");
+  const [isConfirmed, setIsConfirmed] = useState(false);
 
   if (!patient) {
     return (
@@ -264,6 +267,23 @@ export default function PeriksaPasien() {
         </Card>
       )}
 
+      {/* CDSS Disclaimer Alert */}
+      <div className="bg-indigo-50/80 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800/50 rounded-xl p-4 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="bg-indigo-100 dark:bg-indigo-900/50 p-3 rounded-xl h-fit w-fit shrink-0">
+            <ShieldCheck className="w-6 h-6 text-indigo-700 dark:text-indigo-400" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-indigo-900 dark:text-indigo-300 flex items-center gap-2 text-base mb-1">
+              Disclaimer Clinical Decision Support System (CDSS)
+            </h4>
+            <p className="text-sm text-indigo-800/80 dark:text-indigo-400/80 leading-relaxed max-w-4xl">
+              Sistem ini merupakan alat bantu keputusan klinis (CDSS) berbasis kecerdasan buatan dan <strong className="text-indigo-900 dark:text-indigo-300">bukan pengganti penilaian medis profesional</strong>. Segala rekomendasi triase dan saran tindakan medis wajib ditinjau, divalidasi, dan dikonfirmasi secara independen oleh dokter yang bertugas sebelum dicatat sebagai keputusan final ke dalam rekam medis dan blockchain.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Left: Patient Info (read-only) */}
         <div className="lg:col-span-1 space-y-4">
@@ -341,17 +361,17 @@ export default function PeriksaPasien() {
               
               {/* SHAP Chart */}
               {patient.triageResult.shap_features && patient.triageResult.shap_features.length > 0 && (
-                <div className="h-[200px] border border-border rounded-xl p-3 bg-muted/30">
+                <div className="h-[300px] border border-border rounded-xl p-3 bg-muted/30">
                   <p className="text-xs font-semibold text-center mb-2 text-muted-foreground">SHAP Feature Importance</p>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={patient.triageResult.shap_features.map(f => ({ name: f.label, value: Math.abs(f.shap_value), isNeg: f.shap_value < 0 }))}
-                      layout="vertical" margin={{ left: 10, right: 10, top: 0, bottom: 0 }}
+                      margin={{ left: 0, right: 0, top: 10, bottom: 90 }}
                     >
-                      <XAxis type="number" hide />
-                      <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 11 }} />
+                      <XAxis type="category" dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-45} textAnchor="end" height={100} />
+                      <YAxis type="number" hide />
                       <Tooltip formatter={(v: number) => [v.toFixed(2), 'Impact']} />
-                      <Bar dataKey="value" radius={4}>
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                         {patient.triageResult.shap_features.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.shap_value < 0 ? '#ef4444' : '#f59e0b'} />
                         ))}
@@ -413,6 +433,34 @@ export default function PeriksaPasien() {
                   />
                 </div>
               )}
+
+              <div className="mt-6 p-4 bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-100 dark:border-indigo-900/30 rounded-xl">
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                  <div className="flex-1">
+                    <h5 className="font-semibold text-sm text-indigo-950 dark:text-indigo-200">Validasi Keputusan Medis</h5>
+                    <p className="text-xs text-indigo-800/70 dark:text-indigo-400/70 mt-1">
+                      Sebagai dokter yang bertugas, saya telah meninjau rekomendasi AI dan bertanggung jawab penuh atas keputusan akhir triase ini.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setIsConfirmed(!isConfirmed)}
+                    variant={isConfirmed ? "default" : "outline"}
+                    className={`gap-2 whitespace-nowrap shrink-0 transition-all ${
+                      isConfirmed 
+                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md' 
+                        : 'border-indigo-200 hover:bg-indigo-100 text-indigo-700 dark:border-indigo-800 dark:hover:bg-indigo-900 dark:text-indigo-300'
+                    }`}
+                    disabled={needsAssignment}
+                  >
+                    {isConfirmed ? (
+                      <CheckCircle2 className="w-4 h-4" />
+                    ) : (
+                      <ShieldCheck className="w-4 h-4" />
+                    )}
+                    {isConfirmed ? "Telah Dikonfirmasi Dokter" : "Konfirmasi oleh Dokter"}
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -487,8 +535,12 @@ export default function PeriksaPasien() {
 
               <Button
                 onClick={handleSubmit}
-                disabled={isSubmitting || needsAssignment || !diagnosis}
-                className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 h-12 text-lg"
+                disabled={isSubmitting || needsAssignment || !diagnosis || !isConfirmed}
+                className={`w-full gap-2 h-12 text-lg transition-all ${
+                  isConfirmed 
+                    ? 'bg-emerald-600 hover:bg-emerald-700 shadow-md' 
+                    : 'bg-muted text-muted-foreground cursor-not-allowed opacity-70'
+                }`}
               >
                 {isSubmitting ? (
                   <>

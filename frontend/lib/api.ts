@@ -1,10 +1,64 @@
 import type { TriageFormInput, TriageResult, EsiLevel } from '@/types'
 import { computeDerivedFeatures, generateReasoningText, hashData } from '@/data/mock'
 
-// Ini adalah mock API call untuk simulasi komunikasi dengan backend FastAPI
-// yang menangani ML inference & Blockchain dual-log
+const AI_API_URL = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000'
 
-export async function callTriageApi(input: TriageFormInput): Promise<{ result: TriageResult, tx_hash_initial: string }> {
+// ─── Real API: POST /predict ────────────────────────────
+async function callRealPredictApi(input: TriageFormInput): Promise<{
+  result: TriageResult
+  tx_hash_initial: string
+}> {
+  const response = await fetch(`${AI_API_URL}/predict`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      patient_id: input.patient_id || '',
+      gcs_total: input.gcs_total,
+      pain_score: input.pain_score,
+      mental_status_triage: input.mental_status_triage,
+      systolic_bp: input.systolic_bp,
+      diastolic_bp: input.diastolic_bp,
+      respiratory_rate: input.respiratory_rate,
+      spo2: input.spo2,
+      heart_rate: input.heart_rate,
+      temperature_c: input.temperature_c,
+      age: input.age || 30,
+      chief_complaint: input.chief_complaint || '',
+      riwayat_kronis_berulang: input.riwayat_kronis_berulang || false,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.detail || `API error: ${response.status}`)
+  }
+
+  const data = await response.json()
+
+  const result: TriageResult = {
+    priority: data.priority,
+    priorityLabel: data.priorityLabel,
+    confidence: data.confidence,
+    reasoning: [],
+    recommendedAction: data.recommendedAction,
+    estimatedWaitTime: data.estimatedWaitTime,
+    color: data.color,
+    esi_level: data.esi_level as EsiLevel,
+    shap_features: data.shap_features,
+    reasoning_text: data.reasoning_text,
+    is_skip_triage: data.is_skip_triage || false,
+  }
+
+  const tx_hash_initial = hashData(JSON.stringify(input) + Date.now().toString())
+
+  return { result, tx_hash_initial }
+}
+
+// ─── Fallback Mock API ──────────────────────────────────
+async function callMockPredictApi(input: TriageFormInput): Promise<{
+  result: TriageResult
+  tx_hash_initial: string
+}> {
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 2000))
 
@@ -24,7 +78,6 @@ export async function callTriageApi(input: TriageFormInput): Promise<{ result: T
   ].sort((a, b) => Math.abs(b.shap_value) - Math.abs(a.shap_value))
 
   const result: TriageResult = {
-    // Legacy fields (for backward compatibility during transition)
     priority: esi_level === 1 ? 'CRITICAL' : esi_level === 2 ? 'HIGH' : esi_level === 3 ? 'MEDIUM' : 'LOW',
     priorityLabel: `ESI ${esi_level}`,
     confidence: 0.85 + (Math.random() * 0.1),
@@ -35,20 +88,31 @@ export async function callTriageApi(input: TriageFormInput): Promise<{ result: T
            esi_level === 2 ? 'text-orange-600 bg-orange-50 border-orange-200' :
            esi_level === 3 ? 'text-yellow-600 bg-yellow-50 border-yellow-200' :
            'text-green-600 bg-green-50 border-green-200',
-    
-    // New ESI fields
     esi_level,
     shap_features,
     reasoning_text: generateReasoningText(shap_features, esi_level, false),
     is_skip_triage: false
   }
 
-  // Generate mock tx_hash for INITIAL log
   const tx_hash_initial = hashData(JSON.stringify(input) + Date.now().toString())
-
   return { result, tx_hash_initial }
 }
 
+// ─── Main API Function (auto-fallback) ──────────────────
+export async function callTriageApi(input: TriageFormInput): Promise<{ result: TriageResult, tx_hash_initial: string }> {
+  try {
+    // Try real API first
+    const result = await callRealPredictApi(input)
+    console.log('[AI] Using real XGBoost model prediction')
+    return result
+  } catch (err) {
+    // Fallback to mock if backend is down
+    console.warn('[AI] Backend not available, using mock prediction:', err)
+    return callMockPredictApi(input)
+  }
+}
+
+// ─── Skip Critical (always local — no model needed) ─────
 export async function callSkipCritical(patient_id: string): Promise<{ result: TriageResult, tx_hash_initial: string }> {
   await new Promise(resolve => setTimeout(resolve, 800))
   
@@ -71,6 +135,7 @@ export async function callSkipCritical(patient_id: string): Promise<{ result: Tr
   return { result, tx_hash_initial }
 }
 
+// ─── Confirm Triage ─────────────────────────────────────
 export async function callConfirmTriage(patient_id: string, confirmation: {
   tier_final: EsiLevel,
   diubah_dokter: boolean,
@@ -80,4 +145,31 @@ export async function callConfirmTriage(patient_id: string, confirmation: {
   await new Promise(resolve => setTimeout(resolve, 1500))
   const tx_hash_final = hashData('FINAL_' + patient_id + JSON.stringify(confirmation) + Date.now().toString())
   return { success: true, tx_hash_final }
+}
+
+// ─── NLP Parse Text ─────────────────────────────────────
+export interface ParseTextResult {
+  vital_signs: Record<string, number>
+  gejala_terdeteksi: Array<{ gejala: string; severity: number }>
+  gejala_dinegasikan: string[]
+  field_masih_kosong: string[]
+  siap_kirim_ke_model: boolean
+  peringatan: string[]
+  kategori_gejala: string[]
+  severity_max: number
+}
+
+export async function callParseText(text: string): Promise<ParseTextResult> {
+  const response = await fetch(`${AI_API_URL}/parse-text`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.detail || `Parse API error: ${response.status}`)
+  }
+
+  return response.json()
 }

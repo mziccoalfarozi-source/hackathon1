@@ -34,7 +34,7 @@ export default function Navbar() {
               whileTap={{ scale: 0.95 }}
               className="relative w-9 h-9 rounded-lg overflow-hidden shadow-md flex-shrink-0"
               >
-                <Image src="/logo.png" alt="Logo RS 212" fill sizes="36px" className="object-cover" />
+                <Image src="/Logo.png" alt="Logo RS 212" fill sizes="36px" className="object-cover" />
             </motion.div>
             <div className="flex flex-col">
               <span className="text-sm font-bold text-foreground leading-tight">AI Triage</span>
