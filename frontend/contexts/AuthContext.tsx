@@ -35,7 +35,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 function getStoredCurrentUser(): User | null {
   try {
-    const stored = localStorage.getItem("rs_misal_current_user");
+    const stored = localStorage.getItem("xtrace_current_user");
     if (stored) return JSON.parse(stored);
   } catch {
     /* ignore */
@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: data.role,
       };
       setUser(userObj);
-      localStorage.setItem("rs_misal_current_user", JSON.stringify(userObj));
+      localStorage.setItem("xtrace_current_user", JSON.stringify(userObj));
       return { success: true };
     } catch {
       return { success: false, error: "Terjadi kesalahan, coba lagi" };
@@ -169,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const updatedUser = { ...user, password: "" };
         setUser(updatedUser);
         localStorage.setItem(
-          "rs_misal_current_user",
+          "xtrace_current_user",
           JSON.stringify(updatedUser),
         );
       }
@@ -182,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("rs_misal_current_user");
+    localStorage.removeItem("xtrace_current_user");
   };
 
   return (
