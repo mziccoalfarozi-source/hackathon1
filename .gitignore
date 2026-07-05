@@ -1,2 +1,36 @@
-# Mengabaikan dataset mentah yang ukurannya raksasa
+# ── Dataset mentah (ukuran besar) ──────────────────────
 Dataset/Hospital Triage and Patient History/hospital_triage_clean.csv
+
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.env.local
+
+# ── AI Engine ───────────────────────────────────────────
+ai-engine/__pycache__/
+ai-engine/.venv/
+
+# ── Frontend (Next.js) ──────────────────────────────────
+frontend/.env.local
+frontend/.next/
+frontend/node_modules/
+frontend/.vercel/
+
+# ── Blockchain ──────────────────────────────────────────
+blockchain/node_modules/
+blockchain/cache/
+blockchain/artifacts/
+blockchain/ignition/deployments/
+
+# ── OS / IDE ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log

@@ -478,7 +478,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Frontend Next.js
+    allow_origins=[
+        "https://vitas-sage.vercel.app",   # Vercel production
+        "https://*.vercel.app",             # Vercel preview deployments
+        "http://localhost:3000",            # Local development
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
